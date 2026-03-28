@@ -1,4 +1,5 @@
 import os
+import re
 import tkinter as tk
 from tkinter import simpledialog, messagebox
 from dotenv import load_dotenv
@@ -49,20 +50,26 @@ def get_meta_prompt_request():
 # BUILD META PROMPT
 # -----------------------------
 def build_chatgpt_prompt(prompt_count, user_request):
-    return f"""I need a list of {prompt_count} high-quality image generation prompts.
+    return f"""I need a list of {prompt_count} high-quality image-to-image editing prompts.
+
+These prompts will always be used with the SAME reference image, so every prompt must preserve the same woman, same identity, same face, same hair, and same overall person from the reference image.
 
 User request:
 {user_request}
 
 Requirements:
-- Each prompt should be 1 single line
+- Each prompt must be 1 single line
 - No numbering
 - No bullet points
 - No extra explanations
 - No emojis
-- Each prompt should be slightly different
-- Photorealistic style
-- Keep prompts clean and consistent
+- Every prompt must clearly imply the same woman from the reference image
+- Focus on changing outfit, pose, setting, framing, expression, and lighting
+- Keep the prompts photorealistic
+- Keep the prompts clean and consistent for image-to-image editing
+- Do not describe a completely new person
+- Do not use vague phrases like "a woman" or "a female model" by themselves
+- Instead, use phrasing like "the same blonde woman from the reference image" or "keep the same woman from the reference image"
 
 Return ONLY the list of prompts."""
 
@@ -83,15 +90,25 @@ def generate_prompts_with_gpt(meta_prompt, api_key):
 
     content = response.choices[0].message.content.strip()
 
-    # Split into list by line
-    prompts = [line.strip() for line in content.split("\n") if line.strip()]
+    prompts = []
+    for line in content.split("\n"):
+        line = line.strip()
+
+        if not line:
+            continue
+
+        # Remove numbering like "1. " or "2) "
+        line = re.sub(r"^\d+[\.\)]\s*", "", line)
+
+        # Skip any accidental bullet-only lines
+        if line in {"-", "*", "•"}:
+            continue
+
+        prompts.append(line)
 
     return prompts
 
 
-# -----------------------------
-# SHOW RESULT
-# -----------------------------
 # -----------------------------
 # SHOW RESULT + SAVE TO FILE
 # -----------------------------
@@ -127,6 +144,7 @@ def show_result(prompts):
 
     print("=" * 80)
     print(f"📁 Saved to: {file_path}\n")
+
 
 # -----------------------------
 # MAIN
