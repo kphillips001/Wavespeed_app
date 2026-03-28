@@ -1,112 +1,132 @@
 import os
-import sys
-import base64
-import time
-import requests
 import tkinter as tk
-from tkinter import filedialog
+from tkinter import simpledialog, messagebox
 from dotenv import load_dotenv
+from openai import OpenAI
 
 
 # -----------------------------
-# CONFIG
+# GET PROMPT COUNT
 # -----------------------------
-MODEL_URL = "https://api.wavespeed.ai/api/v3/bytedance/seedream-v5.0-lite/edit"
-SAVE_DIR = r"D:\Amanda Cayne\Ready\Wavespeed"
+def get_prompt_count():
+    while True:
+        try:
+            user_input = input("\nHow many prompts do you want ChatGPT to generate? ").strip()
+            prompt_count = int(user_input)
+
+            if prompt_count > 0:
+                return prompt_count
+
+            print("❌ Enter a number greater than 0.")
+        except ValueError:
+            print("❌ Please enter a valid number.")
 
 
 # -----------------------------
-# FILE PICKER
+# INPUT BOX FOR META REQUEST
 # -----------------------------
-def select_image():
+def get_meta_prompt_request():
     root = tk.Tk()
     root.withdraw()
+    root.attributes("-topmost", True)
+    root.update()
 
-    file_path = filedialog.askopenfilename(
-        title="Select Reference Image",
-        filetypes=[("Image Files", "*.png *.jpg *.jpeg *.webp")]
+    user_request = simpledialog.askstring(
+        title="Prompt Request",
+        prompt=(
+            "Enter what you want ChatGPT to generate.\n\n"
+            "Example:\n"
+            "Sexy spring outfits, tight clothing, indoor/outdoor, teasing poses"
+        ),
+        parent=root
     )
 
-    return file_path
+    root.destroy()
+    return user_request
 
 
 # -----------------------------
-# UPLOAD TO IMGBB
+# BUILD META PROMPT
 # -----------------------------
-def upload_to_imgbb(image_path, api_key):
-    with open(image_path, "rb") as file:
-        encoded = base64.b64encode(file.read())
+def build_chatgpt_prompt(prompt_count, user_request):
+    return f"""I need a list of {prompt_count} high-quality image generation prompts.
 
-    response = requests.post(
-        "https://api.imgbb.com/1/upload",
-        data={
-            "key": api_key,
-            "image": encoded
-        }
+User request:
+{user_request}
+
+Requirements:
+- Each prompt should be 1 single line
+- No numbering
+- No bullet points
+- No extra explanations
+- No emojis
+- Each prompt should be slightly different
+- Photorealistic style
+- Keep prompts clean and consistent
+
+Return ONLY the list of prompts."""
+
+
+# -----------------------------
+# CALL CHATGPT
+# -----------------------------
+def generate_prompts_with_gpt(meta_prompt, api_key):
+    client = OpenAI(api_key=api_key)
+
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "user", "content": meta_prompt}
+        ],
+        temperature=0.9
     )
 
-    response.raise_for_status()
-    return response.json()["data"]["url"]
+    content = response.choices[0].message.content.strip()
+
+    # Split into list by line
+    prompts = [line.strip() for line in content.split("\n") if line.strip()]
+
+    return prompts
 
 
 # -----------------------------
-# SEND TO WAVESPEED
+# SHOW RESULT
 # -----------------------------
-def generate_image(prompt, image_url, api_key):
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json"
-    }
-
-    payload = {
-        "prompt": prompt,
-        "images": [image_url],
-        "output_format": "jpeg"
-    }
-
-    response = requests.post(MODEL_URL, headers=headers, json=payload)
-    response.raise_for_status()
-
-    return response.json()
-
-
 # -----------------------------
-# POLL RESULT
+# SHOW RESULT + SAVE TO FILE
 # -----------------------------
-def poll_result(task_id, api_key):
-    url = f"https://api.wavespeed.ai/api/v3/predictions/{task_id}/result"
+def show_result(prompts):
+    root = tk.Tk()
+    root.withdraw()
+    root.attributes("-topmost", True)
+    root.update()
 
-    headers = {
-        "Authorization": f"Bearer {api_key}"
-    }
+    # Save path = same directory as this script
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    file_path = os.path.join(script_dir, "prompts.txt")
 
-    while True:
-        response = requests.get(url, headers=headers)
-        response.raise_for_status()
-        data = response.json()
+    # Save prompts to file
+    with open(file_path, "w", encoding="utf-8") as f:
+        for p in prompts:
+            f.write(p + "\n")
 
-        status = data.get("data", {}).get("status")
+    messagebox.showinfo(
+        "Prompts Generated",
+        f"{len(prompts)} prompts generated.\n\nSaved to:\n{file_path}",
+        parent=root
+    )
 
-        print(f"Status: {status}")
+    root.destroy()
 
-        if status == "completed":
-            return data
-        elif status == "failed":
-            raise Exception("Generation failed")
+    print("\n" + "=" * 80)
+    print("🔥 GENERATED PROMPTS:")
+    print("=" * 80)
 
-        time.sleep(3)
+    for i, p in enumerate(prompts, 1):
+        print(f"{i}. {p}")
 
-
-# -----------------------------
-# DOWNLOAD IMAGE
-# -----------------------------
-def download_image(url, save_path):
-    response = requests.get(url)
-    response.raise_for_status()
-
-    with open(save_path, "wb") as f:
-        f.write(response.content)
-
+    print("=" * 80)
+    print(f"📁 Saved to: {file_path}\n")
 
 # -----------------------------
 # MAIN
@@ -114,65 +134,30 @@ def download_image(url, save_path):
 def main():
     load_dotenv()
 
-    wavespeed_key = os.getenv("WAVESPEED_API_KEY")
-    imgbb_key = os.getenv("IMGBB_API_KEY")
+    openai_key = os.getenv("OPENAI_API_KEY")
 
-    if not wavespeed_key:
-        raise ValueError("Missing WAVESPEED_API_KEY in .env")
+    if not openai_key:
+        raise ValueError("Missing OPENAI_API_KEY in .env")
 
-    if not imgbb_key:
-        raise ValueError("Missing IMGBB_API_KEY in .env")
+    prompt_count = get_prompt_count()
 
-    # Step 1: pick image
-    image_path = select_image()
+    print(f"\n✅ You want {prompt_count} prompts.")
+    print("👉 Press Enter to continue and open the input box...")
+    input()
 
-    if not image_path:
-        print("No image selected.")
+    user_request = get_meta_prompt_request()
+
+    if not user_request or not user_request.strip():
+        print("No request entered.")
         return
 
-    print(f"\nSelected image: {image_path}")
+    meta_prompt = build_chatgpt_prompt(prompt_count, user_request.strip())
 
-    # Step 2: upload to ImgBB
-    print("\nUploading image to ImgBB...")
-    image_url = upload_to_imgbb(image_path, imgbb_key)
-    print(f"Image URL: {image_url}")
+    print("\n🤖 Generating prompts with ChatGPT...\n")
 
-    # Step 3: send to WaveSpeed
-    print("\nSending to WaveSpeed...")
-    result = generate_image(
-        prompt="Keep same woman, change outfit to tight black dress, soft lighting, photorealistic",
-        image_url=image_url,
-        api_key=wavespeed_key
-    )
+    prompts = generate_prompts_with_gpt(meta_prompt, openai_key)
 
-    task_id = result.get("data", {}).get("id")
-
-    if not task_id:
-        raise ValueError("No task ID returned from WaveSpeed.")
-
-    print(f"\nTask ID: {task_id}")
-
-    # Step 4: poll result
-    print("\nWaiting for result...")
-    final_result = poll_result(task_id, wavespeed_key)
-
-    output_url = final_result.get("data", {}).get("outputs", [None])[0]
-
-    if not output_url:
-        raise ValueError("No output URL returned from WaveSpeed.")
-
-    print("\n🔥 DONE")
-    print(f"Generated Image URL: {output_url}")
-
-    # Step 5: save image locally
-    os.makedirs(SAVE_DIR, exist_ok=True)
-
-    timestamp = int(time.time())
-    save_path = os.path.join(SAVE_DIR, f"{timestamp}.jpg")
-
-    print("\nSaving image locally...")
-    download_image(output_url, save_path)
-    print(f"Saved to: {save_path}")
+    show_result(prompts)
 
 
 if __name__ == "__main__":
