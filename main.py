@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 # CONFIG
 # -----------------------------
 MODEL_URL = "https://api.wavespeed.ai/api/v3/bytedance/seedream-v5.0-lite/edit"
+SAVE_DIR = r"D:\Amanda Cayne\Ready\Wavespeed"
 
 
 # -----------------------------
@@ -97,6 +98,17 @@ def poll_result(task_id, api_key):
 
 
 # -----------------------------
+# DOWNLOAD IMAGE
+# -----------------------------
+def download_image(url, save_path):
+    response = requests.get(url)
+    response.raise_for_status()
+
+    with open(save_path, "wb") as f:
+        f.write(response.content)
+
+
+# -----------------------------
 # MAIN
 # -----------------------------
 def main():
@@ -135,6 +147,9 @@ def main():
 
     task_id = result.get("data", {}).get("id")
 
+    if not task_id:
+        raise ValueError("No task ID returned from WaveSpeed.")
+
     print(f"\nTask ID: {task_id}")
 
     # Step 4: poll result
@@ -143,8 +158,21 @@ def main():
 
     output_url = final_result.get("data", {}).get("outputs", [None])[0]
 
+    if not output_url:
+        raise ValueError("No output URL returned from WaveSpeed.")
+
     print("\n🔥 DONE")
     print(f"Generated Image URL: {output_url}")
+
+    # Step 5: save image locally
+    os.makedirs(SAVE_DIR, exist_ok=True)
+
+    timestamp = int(time.time())
+    save_path = os.path.join(SAVE_DIR, f"{timestamp}.jpg")
+
+    print("\nSaving image locally...")
+    download_image(output_url, save_path)
+    print(f"Saved to: {save_path}")
 
 
 if __name__ == "__main__":
