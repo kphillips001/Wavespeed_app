@@ -350,7 +350,7 @@ def submit_wavespeed_task(prompt, image_url, api_key, model_url):
     payload = {
         "prompt": prompt,
         "images": [image_url],
-        "output_format": "jpeg"
+        "output_format": "png"
     }
 
     response = requests.post(
