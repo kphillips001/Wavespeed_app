@@ -1,20 +1,43 @@
 import os
 import re
-import csv
 import time
 import base64
+import shutil
 import requests
 import tkinter as tk
+from datetime import datetime
 from tkinter import simpledialog, messagebox, filedialog
+
 from dotenv import load_dotenv
 from openai import OpenAI
+from PIL import Image
 
 
 # -----------------------------
 # CONFIG
 # -----------------------------
-WAVESPEED_MODEL_URL = "https://api.wavespeed.ai/api/v3/bytedance/seedream-v5.0-lite/edit"
 WAVESPEED_RESULT_URL = "https://api.wavespeed.ai/api/v3/predictions/{request_id}/result"
+
+MODELS = {
+    "1": {
+        "name": "Google Nano Banana 2 Edit",
+        "endpoint": "https://api.wavespeed.ai/api/v3/google/nano-banana-2/edit",
+    },
+    "2": {
+        "name": "Google Nano Banana Pro Edit",
+        "endpoint": "https://api.wavespeed.ai/api/v3/google/nano-banana-pro/edit",
+    },
+    "3": {
+        "name": "ByteDance Seedream 4.5 Edit",
+        "endpoint": "https://api.wavespeed.ai/api/v3/bytedance/seedream-v4.5/edit",
+    },
+    "4": {
+        "name": "ByteDance Seedream 5.0 Lite Edit",
+        "endpoint": "https://api.wavespeed.ai/api/v3/bytedance/seedream-v5.0-lite/edit",
+    },
+}
+
+SUPPORTED_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 
 
 # -----------------------------
@@ -30,6 +53,17 @@ def get_prompts_file_path():
 
 def get_outputs_dir():
     return r"D:\Amanda Cayne\Ready\Wavespeed"
+
+
+def get_temp_root_dir():
+    return os.path.join(get_script_dir(), "temp")
+
+
+def create_temp_run_dir():
+    run_stamp = datetime.now().strftime("run_%Y%m%d_%H%M%S")
+    temp_run_dir = os.path.join(get_temp_root_dir(), run_stamp)
+    os.makedirs(temp_run_dir, exist_ok=True)
+    return temp_run_dir, run_stamp
 
 
 # -----------------------------
@@ -118,6 +152,7 @@ CONTENT RULES:
 
 Return ONLY the list of prompts."""
 
+
 # -----------------------------
 # CALL CHATGPT
 # -----------------------------
@@ -141,10 +176,8 @@ def generate_prompts_with_gpt(meta_prompt, api_key):
         if not line:
             continue
 
-        # Remove numbering like "1. " or "2) "
         line = re.sub(r"^\d+[\.\)]\s*", "", line)
 
-        # Skip accidental bullet-only lines
         if line in {"-", "*", "•"}:
             continue
 
@@ -185,6 +218,35 @@ def show_result(prompts):
 
     print("=" * 80)
     print(f"📁 Saved to: {file_path}\n")
+
+
+# -----------------------------
+# MODEL SELECTION
+# -----------------------------
+def select_model():
+    print("\n🎯 Select WaveSpeed Model:\n")
+    print("1 for Google Nano Banana 2 Edit")
+    print("2 for Google Nano Banana Pro Edit")
+    print("3 for ByteDance Seedream 4.5 Edit")
+    print("4 for ByteDance Seedream 5.0 Lite Edit")
+
+    while True:
+        choice = input("\nEnter number (1-4): ").strip()
+
+        if choice == "1":
+            selected = MODELS["1"]
+        elif choice == "2":
+            selected = MODELS["2"]
+        elif choice == "3":
+            selected = MODELS["3"]
+        elif choice == "4":
+            selected = MODELS["4"]
+        else:
+            print("❌ Invalid selection. Try again.")
+            continue
+
+        print(f"\n✅ Selected: {selected['name']}\n")
+        return selected
 
 
 # -----------------------------
@@ -279,7 +341,7 @@ def upload_to_imgbb(image_path, api_key):
 # -----------------------------
 # WAVESPEED SUBMIT TASK
 # -----------------------------
-def submit_wavespeed_task(prompt, image_url, api_key):
+def submit_wavespeed_task(prompt, image_url, api_key, model_url):
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json"
@@ -292,7 +354,7 @@ def submit_wavespeed_task(prompt, image_url, api_key):
     }
 
     response = requests.post(
-        WAVESPEED_MODEL_URL,
+        model_url,
         headers=headers,
         json=payload,
         timeout=120
@@ -358,27 +420,85 @@ def download_image(url, save_path):
     with open(save_path, "wb") as f:
         f.write(response.content)
 
-# -----------------------------
-# SAVE MANIFEST
-# -----------------------------
-def save_manifest(rows):
-    manifest_path = os.path.join(get_outputs_dir(), "manifest.csv")
 
-    with open(manifest_path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(
-            f,
-            fieldnames=["index", "prompt", "request_id", "wavespeed_url", "saved_path"]
-        )
-        writer.writeheader()
-        writer.writerows(rows)
+# -----------------------------
+# METADATA STRIPPING HELPERS
+# -----------------------------
+def strip_metadata_and_save(input_path, output_path):
+    with Image.open(input_path) as img:
+        cleaned = Image.new(img.mode, img.size)
+        cleaned.putdata(list(img.getdata()))
 
-    return manifest_path
+        save_kwargs = {}
+        ext = os.path.splitext(output_path)[1].lower()
+
+        if cleaned.mode == "P" and ext in {".jpg", ".jpeg"}:
+            cleaned = cleaned.convert("RGB")
+
+        if cleaned.mode == "RGBA" and ext in {".jpg", ".jpeg"}:
+            cleaned = cleaned.convert("RGB")
+
+        if ext in {".jpg", ".jpeg"}:
+            save_kwargs["format"] = "JPEG"
+            save_kwargs["quality"] = 95
+            save_kwargs["optimize"] = True
+        elif ext == ".png":
+            save_kwargs["format"] = "PNG"
+        elif ext == ".webp":
+            save_kwargs["format"] = "WEBP"
+            save_kwargs["quality"] = 95
+
+        cleaned.save(output_path, **save_kwargs)
+
+
+def get_final_output_path(outputs_dir, run_stamp, index):
+    filename = f"{run_stamp}_{index:03d}.jpg"
+    return os.path.join(outputs_dir, filename)
+
+
+def clean_temp_images_to_final(temp_run_dir, outputs_dir, run_stamp):
+    os.makedirs(outputs_dir, exist_ok=True)
+
+    raw_files = []
+    for name in sorted(os.listdir(temp_run_dir)):
+        path = os.path.join(temp_run_dir, name)
+        if not os.path.isfile(path):
+            continue
+
+        ext = os.path.splitext(name)[1].lower()
+        if ext in SUPPORTED_IMAGE_EXTENSIONS:
+            raw_files.append(path)
+
+    if not raw_files:
+        raise ValueError("No raw images found in temp folder to clean.")
+
+    print("\n" + "=" * 80)
+    print("🧼 STARTING METADATA CLEANING")
+    print("=" * 80)
+    print(f"📂 Temp run folder: {temp_run_dir}")
+    print(f"📂 Final output folder: {outputs_dir}\n")
+
+    cleaned_paths = []
+
+    for index, raw_path in enumerate(raw_files, start=1):
+        final_path = get_final_output_path(outputs_dir, run_stamp, index)
+
+        print(f"🧼 Cleaning image {index}/{len(raw_files)}")
+        print(f"    RAW   : {raw_path}")
+        print(f"    FINAL : {final_path}")
+
+        strip_metadata_and_save(raw_path, final_path)
+        cleaned_paths.append(final_path)
+
+        print("    ✅ Metadata stripped and saved to final directory\n")
+
+    return cleaned_paths
 
 
 # -----------------------------
 # RUN WAVESPEED LOOP
 # -----------------------------
-def run_wavespeed(prompts, wavespeed_key, imgbb_key):
+def run_wavespeed(prompts, wavespeed_key, imgbb_key, selected_model):
     run_count = get_run_count(len(prompts))
     prompts_to_run = prompts[:run_count]
 
@@ -393,44 +513,78 @@ def run_wavespeed(prompts, wavespeed_key, imgbb_key):
     print(f"\n🖼️ Reference image selected: {image_path}")
     print("☁️ Uploading reference image once to ImgBB...")
     image_url = upload_to_imgbb(image_path, imgbb_key)
-    print(f"✅ Reference image URL ready.\n")
+    print("✅ Reference image URL ready.\n")
 
     outputs_dir = get_outputs_dir()
     os.makedirs(outputs_dir, exist_ok=True)
 
-    manifest_rows = []
+    temp_run_dir, run_stamp = create_temp_run_dir()
 
-    for index, prompt in enumerate(prompts_to_run, start=1):
-        print("-" * 80)
-        print(f"🎨 Generating image {index}/{run_count}")
-        print(f"Prompt: {prompt}")
-
-        request_id = submit_wavespeed_task(prompt, image_url, wavespeed_key)
-        print(f"    Task ID: {request_id}")
-
-        output_url = poll_wavespeed_result(request_id, wavespeed_key)
-
-        save_path = os.path.join(outputs_dir, f"{index:03d}.jpg")
-        download_image(output_url, save_path)
-
-        print(f"    ✅ Saved: {save_path}")
-
-        manifest_rows.append({
-            "index": index,
-            "prompt": prompt,
-            "request_id": request_id,
-            "wavespeed_url": output_url,
-            "saved_path": save_path
-        })
-
-    manifest_path = save_manifest(manifest_rows)
-
-    print("\n" + "=" * 80)
-    print("🔥 WAVESPEED RUN COMPLETE")
     print("=" * 80)
-    print(f"Images saved to: {outputs_dir}")
-    print(f"Manifest saved to: {manifest_path}")
+    print("📁 RUN PATHS")
+    print("=" * 80)
+    print(f"🧪 Temp run folder : {temp_run_dir}")
+    print(f"📦 Final output    : {outputs_dir}")
+    print(f"🏷️ Run stamp       : {run_stamp}")
     print("=" * 80 + "\n")
+
+    raw_downloaded = []
+
+    try:
+        for index, prompt in enumerate(prompts_to_run, start=1):
+            print("-" * 80)
+            print(f"🎨 Generating image {index}/{run_count}")
+            print(f"Model: {selected_model['name']}")
+            print(f"Prompt: {prompt}")
+
+            request_id = submit_wavespeed_task(
+                prompt=prompt,
+                image_url=image_url,
+                api_key=wavespeed_key,
+                model_url=selected_model["endpoint"]
+            )
+            print(f"    Task ID: {request_id}")
+
+            output_url = poll_wavespeed_result(request_id, wavespeed_key)
+
+            raw_save_path = os.path.join(temp_run_dir, f"{index:03d}.jpg")
+            download_image(output_url, raw_save_path)
+            raw_downloaded.append(raw_save_path)
+
+            print(f"    ✅ RAW saved to temp: {raw_save_path}")
+
+        print("\n" + "=" * 80)
+        print("✅ ALL WAVESPEED IMAGES DOWNLOADED")
+        print("=" * 80)
+        print(f"Raw images downloaded: {len(raw_downloaded)}")
+        print("Starting metadata cleanup phase...")
+        print("=" * 80)
+
+        cleaned_paths = clean_temp_images_to_final(
+            temp_run_dir=temp_run_dir,
+            outputs_dir=outputs_dir,
+            run_stamp=run_stamp
+        )
+
+        shutil.rmtree(temp_run_dir, ignore_errors=True)
+
+        print("\n" + "=" * 80)
+        print("🔥 WAVESPEED RUN COMPLETE")
+        print("=" * 80)
+        print(f"✅ Raw images downloaded : {len(raw_downloaded)}")
+        print(f"✅ Images cleaned        : {len(cleaned_paths)}")
+        print(f"📂 Final output folder   : {outputs_dir}")
+        print("🗑️ Temp folder deleted")
+        print("=" * 80 + "\n")
+
+    except Exception as e:
+        print("\n" + "=" * 80)
+        print("❌ WAVESPEED RUN FAILED")
+        print("=" * 80)
+        print(f"Temp run folder kept for inspection: {temp_run_dir}")
+        print(f"Reason: {e}")
+        print("=" * 80 + "\n")
+        raise
 
 
 # -----------------------------
@@ -468,12 +622,14 @@ def main():
     prompts = generate_prompts_with_gpt(meta_prompt, openai_key)
     show_result(prompts)
 
+    selected_model = select_model()
+
     if not ask_yes_no("Send these prompts to WaveSpeed now?"):
         print("Okay — prompts were generated and saved, but no WaveSpeed run was started.")
         return
 
     prompts_from_file = load_prompts_from_file(get_prompts_file_path())
-    run_wavespeed(prompts_from_file, wavespeed_key, imgbb_key)
+    run_wavespeed(prompts_from_file, wavespeed_key, imgbb_key, selected_model)
 
 
 if __name__ == "__main__":
