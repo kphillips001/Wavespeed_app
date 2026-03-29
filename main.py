@@ -39,6 +39,17 @@ MODELS = {
 
 SUPPORTED_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 
+PERSONA_OUTPUT_DIRS = {
+    "1": {
+        "name": "Ava Blackthorne",
+        "output_dir": r"D:\Ava Blackthorne\Ready\Wavespeed",
+    },
+    "2": {
+        "name": "Amanda Cayne",
+        "output_dir": r"D:\Amanda Cayne\Ready\Wavespeed",
+    },
+}
+
 
 # -----------------------------
 # PATH HELPERS
@@ -51,8 +62,8 @@ def get_prompts_file_path():
     return os.path.join(get_script_dir(), "prompts.txt")
 
 
-def get_outputs_dir():
-    return r"D:\Amanda Cayne\Ready\Wavespeed"
+def get_outputs_dir(persona_choice):
+    return PERSONA_OUTPUT_DIRS[persona_choice]["output_dir"]
 
 
 def get_temp_root_dir():
@@ -64,6 +75,28 @@ def create_temp_run_dir():
     temp_run_dir = os.path.join(get_temp_root_dir(), run_stamp)
     os.makedirs(temp_run_dir, exist_ok=True)
     return temp_run_dir, run_stamp
+
+
+# -----------------------------
+# PERSONA SELECTION
+# -----------------------------
+def select_persona():
+    print("\n" + "=" * 80)
+    print("🎭 SELECT PERSONA")
+    print("=" * 80)
+    print("Press 1 for Ava Blackthorne")
+    print("Press 2 for Amanda Cayne")
+
+    while True:
+        choice = input("\nEnter number (1 or 2): ").strip()
+
+        if choice in PERSONA_OUTPUT_DIRS:
+            selected = PERSONA_OUTPUT_DIRS[choice]
+            print(f"\n✅ Selected: {selected['name']}")
+            print(f"📂 Final output folder: {selected['output_dir']}\n")
+            return choice
+
+        print("❌ Invalid selection. Please enter 1 or 2.")
 
 
 # -----------------------------
@@ -405,7 +438,8 @@ def poll_wavespeed_result(request_id, api_key):
             raise ValueError(f"Unexpected outputs format: {outputs}")
 
         if status == "failed":
-            raise RuntimeError(f"WaveSpeed task failed. Response: {data}")
+            error_message = data.get("data", {}).get("error", "Unknown WaveSpeed error")
+            raise RuntimeError(f"WaveSpeed task failed: {error_message}")
 
         time.sleep(3)
 
@@ -452,7 +486,7 @@ def strip_metadata_and_save(input_path, output_path):
 
 
 def get_final_output_path(outputs_dir, run_stamp, index):
-    filename = f"{run_stamp}_{index:03d}.jpg"
+    filename = f"{run_stamp}_{index:03d}.png"
     return os.path.join(outputs_dir, filename)
 
 
@@ -470,7 +504,7 @@ def clean_temp_images_to_final(temp_run_dir, outputs_dir, run_stamp):
             raw_files.append(path)
 
     if not raw_files:
-        raise ValueError("No raw images found in temp folder to clean.")
+        return []
 
     print("\n" + "=" * 80)
     print("🧼 STARTING METADATA CLEANING")
@@ -496,9 +530,26 @@ def clean_temp_images_to_final(temp_run_dir, outputs_dir, run_stamp):
 
 
 # -----------------------------
+# FINALIZE PARTIAL OR FULL RUN
+# -----------------------------
+def finalize_downloaded_images(temp_run_dir, outputs_dir, run_stamp, raw_downloaded):
+    if not raw_downloaded:
+        return []
+
+    cleaned_paths = clean_temp_images_to_final(
+        temp_run_dir=temp_run_dir,
+        outputs_dir=outputs_dir,
+        run_stamp=run_stamp
+    )
+
+    shutil.rmtree(temp_run_dir, ignore_errors=True)
+    return cleaned_paths
+
+
+# -----------------------------
 # RUN WAVESPEED LOOP
 # -----------------------------
-def run_wavespeed(prompts, wavespeed_key, imgbb_key, selected_model):
+def run_wavespeed(prompts, wavespeed_key, imgbb_key, selected_model, persona_choice):
     run_count = get_run_count(len(prompts))
     prompts_to_run = prompts[:run_count]
 
@@ -515,7 +566,7 @@ def run_wavespeed(prompts, wavespeed_key, imgbb_key, selected_model):
     image_url = upload_to_imgbb(image_path, imgbb_key)
     print("✅ Reference image URL ready.\n")
 
-    outputs_dir = get_outputs_dir()
+    outputs_dir = get_outputs_dir(persona_choice)
     os.makedirs(outputs_dir, exist_ok=True)
 
     temp_run_dir, run_stamp = create_temp_run_dir()
@@ -523,20 +574,23 @@ def run_wavespeed(prompts, wavespeed_key, imgbb_key, selected_model):
     print("=" * 80)
     print("📁 RUN PATHS")
     print("=" * 80)
+    print(f"🎭 Persona         : {PERSONA_OUTPUT_DIRS[persona_choice]['name']}")
     print(f"🧪 Temp run folder : {temp_run_dir}")
     print(f"📦 Final output    : {outputs_dir}")
     print(f"🏷️ Run stamp       : {run_stamp}")
     print("=" * 80 + "\n")
 
     raw_downloaded = []
+    failure_reason = None
+    failed_prompt_index = None
 
-    try:
-        for index, prompt in enumerate(prompts_to_run, start=1):
-            print("-" * 80)
-            print(f"🎨 Generating image {index}/{run_count}")
-            print(f"Model: {selected_model['name']}")
-            print(f"Prompt: {prompt}")
+    for index, prompt in enumerate(prompts_to_run, start=1):
+        print("-" * 80)
+        print(f"🎨 Generating image {index}/{run_count}")
+        print(f"Model: {selected_model['name']}")
+        print(f"Prompt: {prompt}")
 
+        try:
             request_id = submit_wavespeed_task(
                 prompt=prompt,
                 image_url=image_url,
@@ -547,44 +601,55 @@ def run_wavespeed(prompts, wavespeed_key, imgbb_key, selected_model):
 
             output_url = poll_wavespeed_result(request_id, wavespeed_key)
 
-            raw_save_path = os.path.join(temp_run_dir, f"{index:03d}.jpg")
+            raw_save_path = os.path.join(temp_run_dir, f"{index:03d}.png")
             download_image(output_url, raw_save_path)
             raw_downloaded.append(raw_save_path)
 
             print(f"    ✅ RAW saved to temp: {raw_save_path}")
 
+        except Exception as e:
+            failure_reason = str(e)
+            failed_prompt_index = index
+
+            print("\n" + "=" * 80)
+            print("⚠️ WAVESPEED STOPPED EARLY")
+            print("=" * 80)
+            print(f"Prompt {index} failed.")
+            print(f"Reason: {failure_reason}")
+            print("The script will now clean and save any images that were already completed.")
+            print("=" * 80 + "\n")
+            break
+
+    cleaned_paths = finalize_downloaded_images(
+        temp_run_dir=temp_run_dir,
+        outputs_dir=outputs_dir,
+        run_stamp=run_stamp,
+        raw_downloaded=raw_downloaded
+    )
+
+    if failure_reason:
         print("\n" + "=" * 80)
-        print("✅ ALL WAVESPEED IMAGES DOWNLOADED")
+        print("⚠️ WAVESPEED RUN PARTIALLY COMPLETED")
         print("=" * 80)
-        print(f"Raw images downloaded: {len(raw_downloaded)}")
-        print("Starting metadata cleanup phase...")
-        print("=" * 80)
-
-        cleaned_paths = clean_temp_images_to_final(
-            temp_run_dir=temp_run_dir,
-            outputs_dir=outputs_dir,
-            run_stamp=run_stamp
-        )
-
-        shutil.rmtree(temp_run_dir, ignore_errors=True)
-
-        print("\n" + "=" * 80)
-        print("🔥 WAVESPEED RUN COMPLETE")
-        print("=" * 80)
+        print(f"🎭 Persona               : {PERSONA_OUTPUT_DIRS[persona_choice]['name']}")
         print(f"✅ Raw images downloaded : {len(raw_downloaded)}")
         print(f"✅ Images cleaned        : {len(cleaned_paths)}")
+        print(f"❌ Failed on prompt      : {failed_prompt_index}/{run_count}")
+        print(f"📝 Failure reason        : {failure_reason}")
         print(f"📂 Final output folder   : {outputs_dir}")
         print("🗑️ Temp folder deleted")
         print("=" * 80 + "\n")
+        return
 
-    except Exception as e:
-        print("\n" + "=" * 80)
-        print("❌ WAVESPEED RUN FAILED")
-        print("=" * 80)
-        print(f"Temp run folder kept for inspection: {temp_run_dir}")
-        print(f"Reason: {e}")
-        print("=" * 80 + "\n")
-        raise
+    print("\n" + "=" * 80)
+    print("🔥 WAVESPEED RUN COMPLETE")
+    print("=" * 80)
+    print(f"🎭 Persona               : {PERSONA_OUTPUT_DIRS[persona_choice]['name']}")
+    print(f"✅ Raw images downloaded : {len(raw_downloaded)}")
+    print(f"✅ Images cleaned        : {len(cleaned_paths)}")
+    print(f"📂 Final output folder   : {outputs_dir}")
+    print("🗑️ Temp folder deleted")
+    print("=" * 80 + "\n")
 
 
 # -----------------------------
@@ -604,6 +669,7 @@ def main():
     if not imgbb_key:
         raise ValueError("Missing IMGBB_API_KEY in .env")
 
+    persona_choice = select_persona()
     prompt_count = get_prompt_count()
 
     print(f"\n✅ You want {prompt_count} prompts.")
@@ -629,7 +695,14 @@ def main():
         return
 
     prompts_from_file = load_prompts_from_file(get_prompts_file_path())
-    run_wavespeed(prompts_from_file, wavespeed_key, imgbb_key, selected_model)
+
+    run_wavespeed(
+        prompts=prompts_from_file,
+        wavespeed_key=wavespeed_key,
+        imgbb_key=imgbb_key,
+        selected_model=selected_model,
+        persona_choice=persona_choice
+    )
 
 
 if __name__ == "__main__":
