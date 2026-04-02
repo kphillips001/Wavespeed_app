@@ -2,7 +2,6 @@ import os
 import re
 import time
 import base64
-import shutil
 import requests
 import tkinter as tk
 from datetime import datetime
@@ -10,7 +9,6 @@ from tkinter import simpledialog, messagebox, filedialog
 
 from dotenv import load_dotenv
 from openai import OpenAI
-from PIL import Image
 
 
 # -----------------------------
@@ -36,8 +34,6 @@ MODELS = {
         "endpoint": "https://api.wavespeed.ai/api/v3/bytedance/seedream-v5.0-lite/edit",
     },
 }
-
-SUPPORTED_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 
 PERSONA_OUTPUT_DIRS = {
     "1": {
@@ -66,15 +62,12 @@ def get_outputs_dir(persona_choice):
     return PERSONA_OUTPUT_DIRS[persona_choice]["output_dir"]
 
 
-def get_temp_root_dir():
-    return os.path.join(get_script_dir(), "temp")
+def create_run_stamp():
+    return datetime.now().strftime("run_%Y%m%d_%H%M%S")
 
 
-def create_temp_run_dir():
-    run_stamp = datetime.now().strftime("run_%Y%m%d_%H%M%S")
-    temp_run_dir = os.path.join(get_temp_root_dir(), run_stamp)
-    os.makedirs(temp_run_dir, exist_ok=True)
-    return temp_run_dir, run_stamp
+def get_failed_prompts_file_path(run_stamp):
+    return os.path.join(get_script_dir(), f"failed_prompts_{run_stamp}.txt")
 
 
 # -----------------------------
@@ -315,22 +308,6 @@ def ask_yes_no(prompt_text):
         print("❌ Please enter y or n.")
 
 
-def get_run_count(max_count):
-    while True:
-        try:
-            user_input = input(
-                f"\nHow many prompts do you want to send to WaveSpeed? (1-{max_count}): "
-            ).strip()
-            run_count = int(user_input)
-
-            if 1 <= run_count <= max_count:
-                return run_count
-
-            print(f"❌ Enter a number between 1 and {max_count}.")
-        except ValueError:
-            print("❌ Please enter a valid number.")
-
-
 # -----------------------------
 # FILE PICKER FOR REFERENCE IMAGE
 # -----------------------------
@@ -351,6 +328,69 @@ def select_reference_image():
 
 
 # -----------------------------
+# IMGBB HELPERS
+# -----------------------------
+def choose_best_imgbb_url(data):
+    """
+    Try the most direct/public image URL fields first.
+    Falls back through several candidates safely.
+    """
+    candidates = [
+        data.get("data", {}).get("image", {}).get("url"),
+        data.get("data", {}).get("url"),
+        data.get("data", {}).get("display_url"),
+        data.get("data", {}).get("medium", {}).get("url"),
+        data.get("data", {}).get("thumb", {}).get("url"),
+    ]
+
+    for url in candidates:
+        if isinstance(url, str) and url.strip():
+            return url.strip()
+
+    raise ValueError(f"Could not find a usable ImgBB URL in response: {data}")
+
+
+def verify_image_url(image_url):
+    """
+    Try to verify the URL, but DO NOT crash the script if it fails.
+    Returns True if verified, False otherwise.
+    """
+    print("🔎 Verifying reference image URL...")
+
+    try:
+        response = requests.get(
+            image_url,
+            timeout=20,
+            allow_redirects=True,
+            headers={
+                "User-Agent": "Mozilla/5.0"
+            }
+        )
+        response.raise_for_status()
+
+        content_type = response.headers.get("Content-Type", "").lower()
+
+        if not content_type.startswith("image/"):
+            print("⚠️ Warning: URL did not return an image.")
+            print(f"⚠️ Content-Type: {content_type}")
+            print("⚠️ Continuing anyway...\n")
+            return False
+
+        print("✅ Reference URL verified")
+        print(f"🔗 URL: {image_url}")
+        print(f"🖼️ Content-Type: {content_type}\n")
+
+        return True
+
+    except requests.exceptions.RequestException as e:
+        print("⚠️ Warning: Could not verify reference image URL.")
+        print(f"⚠️ Reason: {e}")
+        print("⚠️ Continuing anyway and letting WaveSpeed try the URL...\n")
+
+        return False
+
+
+# -----------------------------
 # UPLOAD TO IMGBB
 # -----------------------------
 def upload_to_imgbb(image_path, api_key):
@@ -368,7 +408,16 @@ def upload_to_imgbb(image_path, api_key):
     response.raise_for_status()
 
     data = response.json()
-    return data["data"]["url"]
+
+    image_url = choose_best_imgbb_url(data)
+
+    print("\n" + "=" * 80)
+    print("☁️ IMGBB UPLOAD COMPLETE")
+    print("=" * 80)
+    print(f"🔗 Selected reference URL: {image_url}")
+    print("=" * 80 + "\n")
+
+    return image_url
 
 
 # -----------------------------
@@ -448,7 +497,13 @@ def poll_wavespeed_result(request_id, api_key):
 # DOWNLOAD IMAGE
 # -----------------------------
 def download_image(url, save_path):
-    response = requests.get(url, timeout=120)
+    response = requests.get(
+        url,
+        timeout=120,
+        headers={
+            "User-Agent": "Mozilla/5.0"
+        }
+    )
     response.raise_for_status()
 
     with open(save_path, "wb") as f:
@@ -456,104 +511,42 @@ def download_image(url, save_path):
 
 
 # -----------------------------
-# METADATA STRIPPING HELPERS
+# FINAL OUTPUT HELPERS
 # -----------------------------
-def strip_metadata_and_save(input_path, output_path):
-    with Image.open(input_path) as img:
-        cleaned = Image.new(img.mode, img.size)
-        cleaned.putdata(list(img.getdata()))
-
-        save_kwargs = {}
-        ext = os.path.splitext(output_path)[1].lower()
-
-        if cleaned.mode == "P" and ext in {".jpg", ".jpeg"}:
-            cleaned = cleaned.convert("RGB")
-
-        if cleaned.mode == "RGBA" and ext in {".jpg", ".jpeg"}:
-            cleaned = cleaned.convert("RGB")
-
-        if ext in {".jpg", ".jpeg"}:
-            save_kwargs["format"] = "JPEG"
-            save_kwargs["quality"] = 95
-            save_kwargs["optimize"] = True
-        elif ext == ".png":
-            save_kwargs["format"] = "PNG"
-        elif ext == ".webp":
-            save_kwargs["format"] = "WEBP"
-            save_kwargs["quality"] = 95
-
-        cleaned.save(output_path, **save_kwargs)
-
-
 def get_final_output_path(outputs_dir, run_stamp, index):
     filename = f"{run_stamp}_{index:03d}.png"
     return os.path.join(outputs_dir, filename)
 
 
-def clean_temp_images_to_final(temp_run_dir, outputs_dir, run_stamp):
-    os.makedirs(outputs_dir, exist_ok=True)
+def save_failed_prompts_report(run_stamp, failed_prompts):
+    if not failed_prompts:
+        return None
 
-    raw_files = []
-    for name in sorted(os.listdir(temp_run_dir)):
-        path = os.path.join(temp_run_dir, name)
-        if not os.path.isfile(path):
-            continue
+    file_path = get_failed_prompts_file_path(run_stamp)
 
-        ext = os.path.splitext(name)[1].lower()
-        if ext in SUPPORTED_IMAGE_EXTENSIONS:
-            raw_files.append(path)
+    with open(file_path, "w", encoding="utf-8") as f:
+        f.write("Failed WaveSpeed Prompts\n")
+        f.write("=" * 80 + "\n\n")
 
-    if not raw_files:
-        return []
+        for item in failed_prompts:
+            f.write(f"Prompt Number: {item['index']}\n")
+            f.write(f"Reason: {item['reason']}\n")
+            f.write(f"Prompt: {item['prompt']}\n")
+            f.write("-" * 80 + "\n")
 
-    print("\n" + "=" * 80)
-    print("🧼 STARTING METADATA CLEANING")
-    print("=" * 80)
-    print(f"📂 Temp run folder: {temp_run_dir}")
-    print(f"📂 Final output folder: {outputs_dir}\n")
-
-    cleaned_paths = []
-
-    for index, raw_path in enumerate(raw_files, start=1):
-        final_path = get_final_output_path(outputs_dir, run_stamp, index)
-
-        print(f"🧼 Cleaning image {index}/{len(raw_files)}")
-        print(f"    RAW   : {raw_path}")
-        print(f"    FINAL : {final_path}")
-
-        strip_metadata_and_save(raw_path, final_path)
-        cleaned_paths.append(final_path)
-
-        print("    ✅ Metadata stripped and saved to final directory\n")
-
-    return cleaned_paths
-
-
-# -----------------------------
-# FINALIZE PARTIAL OR FULL RUN
-# -----------------------------
-def finalize_downloaded_images(temp_run_dir, outputs_dir, run_stamp, raw_downloaded):
-    if not raw_downloaded:
-        return []
-
-    cleaned_paths = clean_temp_images_to_final(
-        temp_run_dir=temp_run_dir,
-        outputs_dir=outputs_dir,
-        run_stamp=run_stamp
-    )
-
-    shutil.rmtree(temp_run_dir, ignore_errors=True)
-    return cleaned_paths
+    return file_path
 
 
 # -----------------------------
 # RUN WAVESPEED LOOP
 # -----------------------------
 def run_wavespeed(prompts, wavespeed_key, imgbb_key, selected_model, persona_choice):
-    run_count = get_run_count(len(prompts))
-    prompts_to_run = prompts[:run_count]
+    prompts_to_run = prompts
+    run_count = len(prompts_to_run)
 
-    print("\n👉 Press Enter to select your reference image...")
+    print(f"\n🚀 Sending ALL {run_count} prompts to WaveSpeed...\n")
+
+    print("👉 Press Enter to select your reference image...")
     input()
 
     image_path = select_reference_image()
@@ -563,26 +556,27 @@ def run_wavespeed(prompts, wavespeed_key, imgbb_key, selected_model, persona_cho
 
     print(f"\n🖼️ Reference image selected: {image_path}")
     print("☁️ Uploading reference image once to ImgBB...")
+
     image_url = upload_to_imgbb(image_path, imgbb_key)
+    verify_image_url(image_url)
+
     print("✅ Reference image URL ready.\n")
 
     outputs_dir = get_outputs_dir(persona_choice)
     os.makedirs(outputs_dir, exist_ok=True)
 
-    temp_run_dir, run_stamp = create_temp_run_dir()
+    run_stamp = create_run_stamp()
 
     print("=" * 80)
     print("📁 RUN PATHS")
     print("=" * 80)
     print(f"🎭 Persona         : {PERSONA_OUTPUT_DIRS[persona_choice]['name']}")
-    print(f"🧪 Temp run folder : {temp_run_dir}")
     print(f"📦 Final output    : {outputs_dir}")
     print(f"🏷️ Run stamp       : {run_stamp}")
     print("=" * 80 + "\n")
 
-    raw_downloaded = []
-    failure_reason = None
-    failed_prompt_index = None
+    saved_paths = []
+    failed_prompts = []
 
     for index, prompt in enumerate(prompts_to_run, start=1):
         print("-" * 80)
@@ -601,54 +595,48 @@ def run_wavespeed(prompts, wavespeed_key, imgbb_key, selected_model, persona_cho
 
             output_url = poll_wavespeed_result(request_id, wavespeed_key)
 
-            raw_save_path = os.path.join(temp_run_dir, f"{index:03d}.png")
-            download_image(output_url, raw_save_path)
-            raw_downloaded.append(raw_save_path)
+            final_save_path = get_final_output_path(outputs_dir, run_stamp, index)
+            download_image(output_url, final_save_path)
+            saved_paths.append(final_save_path)
 
-            print(f"    ✅ RAW saved to temp: {raw_save_path}")
+            print(f"    ✅ Saved to final: {final_save_path}")
 
         except Exception as e:
             failure_reason = str(e)
-            failed_prompt_index = index
+            failed_prompts.append({
+                "index": index,
+                "prompt": prompt,
+                "reason": failure_reason,
+            })
 
             print("\n" + "=" * 80)
-            print("⚠️ WAVESPEED STOPPED EARLY")
+            print("⚠️ WAVESPEED PROMPT FAILED — SKIPPING TO NEXT")
             print("=" * 80)
             print(f"Prompt {index} failed.")
             print(f"Reason: {failure_reason}")
-            print("The script will now clean and save any images that were already completed.")
+            print("Continuing with the remaining prompts...")
             print("=" * 80 + "\n")
-            break
+            continue
 
-    cleaned_paths = finalize_downloaded_images(
-        temp_run_dir=temp_run_dir,
-        outputs_dir=outputs_dir,
-        run_stamp=run_stamp,
-        raw_downloaded=raw_downloaded
-    )
-
-    if failure_reason:
-        print("\n" + "=" * 80)
-        print("⚠️ WAVESPEED RUN PARTIALLY COMPLETED")
-        print("=" * 80)
-        print(f"🎭 Persona               : {PERSONA_OUTPUT_DIRS[persona_choice]['name']}")
-        print(f"✅ Raw images downloaded : {len(raw_downloaded)}")
-        print(f"✅ Images cleaned        : {len(cleaned_paths)}")
-        print(f"❌ Failed on prompt      : {failed_prompt_index}/{run_count}")
-        print(f"📝 Failure reason        : {failure_reason}")
-        print(f"📂 Final output folder   : {outputs_dir}")
-        print("🗑️ Temp folder deleted")
-        print("=" * 80 + "\n")
-        return
+    failed_report_path = save_failed_prompts_report(run_stamp, failed_prompts)
 
     print("\n" + "=" * 80)
-    print("🔥 WAVESPEED RUN COMPLETE")
+    if failed_prompts:
+        print("⚠️ WAVESPEED RUN COMPLETED WITH SOME FAILURES")
+    else:
+        print("🔥 WAVESPEED RUN COMPLETE")
     print("=" * 80)
-    print(f"🎭 Persona               : {PERSONA_OUTPUT_DIRS[persona_choice]['name']}")
-    print(f"✅ Raw images downloaded : {len(raw_downloaded)}")
-    print(f"✅ Images cleaned        : {len(cleaned_paths)}")
-    print(f"📂 Final output folder   : {outputs_dir}")
-    print("🗑️ Temp folder deleted")
+    print(f"🎭 Persona              : {PERSONA_OUTPUT_DIRS[persona_choice]['name']}")
+    print(f"✅ Images saved to final: {len(saved_paths)}")
+    print(f"❌ Failed prompts       : {len(failed_prompts)}")
+    print(f"📂 Final output folder  : {outputs_dir}")
+
+    if failed_prompts:
+        failed_numbers = ", ".join(str(item["index"]) for item in failed_prompts)
+        print(f"📝 Failed prompt numbers: {failed_numbers}")
+        if failed_report_path:
+            print(f"📄 Failed prompts file  : {failed_report_path}")
+
     print("=" * 80 + "\n")
 
 
