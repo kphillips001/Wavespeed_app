@@ -1,0 +1,71 @@
+Failed WaveSpeed Prompts
+================================================================================
+
+Prompt Number: 1
+Reason: WaveSpeed task failed: Content flagged as potentially sensitive. Please try different prompts or images.
+Prompt: The exact same woman from the reference image with identical face, hair, and body, wearing a string bikini and seated on a boat deck with a forward lean, confidently gazing ahead in soft warm lighting on a sunny summer day.
+--------------------------------------------------------------------------------
+Prompt Number: 3
+Reason: WaveSpeed task failed: Content flagged as potentially sensitive. Please try different prompts or images.
+Prompt: The exact same woman from the reference image with identical face, hair, and body, dressed in a deep V-neck top and fitted lingerie, reclining on a lounge chair by the pool with an open posture, highlighting curves in soft warm evening light.
+--------------------------------------------------------------------------------
+Prompt Number: 4
+Reason: WaveSpeed task failed: Content flagged as potentially sensitive. Please try different prompts or images.
+Prompt: The exact same woman from the reference image with identical face, hair, and body, in a plunging neckline bodycon dress, walking along a beach path with a slight forward lean, confident stride in photorealistic soft warm sunlight.
+--------------------------------------------------------------------------------
+Prompt Number: 5
+Reason: WaveSpeed task failed: Content flagged as potentially sensitive. Please try different prompts or images.
+Prompt: The exact same woman from the reference image with identical face, hair, and body, wearing a tight tank top and bikini bottoms, interacting with ocean waves while over-the-shoulder glancing, form-enhancing pose in warm golden hour light.
+--------------------------------------------------------------------------------
+Prompt Number: 6
+Reason: WaveSpeed task failed: Content flagged as potentially sensitive. Please try different prompts or images.
+Prompt: The exact same woman from the reference image with identical face, hair, and body, in an off-shoulder top and push-up bra, seated on a porch swing with an angled torso lean, playful smile in indoor-outdoor soft warm ambiance.
+--------------------------------------------------------------------------------
+Prompt Number: 7
+Reason: WaveSpeed task failed: Content flagged as potentially sensitive. Please try different prompts or images.
+Prompt: The exact same woman from the reference image with identical face, hair, and body, dressed in a tight athletic top and string bikini, reclining against a boat cushion with arms extended, curves emphasized in soft warm daylight.
+--------------------------------------------------------------------------------
+Prompt Number: 8
+Reason: WaveSpeed task failed: Content flagged as potentially sensitive. Please try different prompts or images.
+Prompt: The exact same woman from the reference image with identical face, hair, and body, wearing a partially open shirt over a deep V-neck, leaning forward on a summer patio table, confident expression in photorealistic warm lighting.
+--------------------------------------------------------------------------------
+Prompt Number: 10
+Reason: WaveSpeed task failed: Content flagged as potentially sensitive. Please try different prompts or images.
+Prompt: The exact same woman from the reference image with identical face, hair, and body, dressed in a bodycon dress with plunging neckline, interacting with a sailboat rope while seated with an open posture, in high-appeal warm sunset glow.
+--------------------------------------------------------------------------------
+Prompt Number: 11
+Reason: WaveSpeed task failed: Content flagged as potentially sensitive. Please try different prompts or images.
+Prompt: The exact same woman from the reference image with identical face, hair, and body, wearing tight shorts and a low-cut top, reclining on a hammock in a backyard, angled body language in soft warm afternoon light.
+--------------------------------------------------------------------------------
+Prompt Number: 12
+Reason: WaveSpeed task failed: Content flagged as potentially sensitive. Please try different prompts or images.
+Prompt: The exact same woman from the reference image with identical face, hair, and body, in a push-up bra under an open jacket, leaning against a tree in a park, playful pose with forward tilt in natural warm daylight.
+--------------------------------------------------------------------------------
+Prompt Number: 13
+Reason: WaveSpeed task failed: Content flagged as potentially sensitive. Please try different prompts or images.
+Prompt: The exact same woman from the reference image with identical face, hair, and body, dressed in a string bikini and tight athletic top layer, over-the-shoulder pose while walking on sand, curves highlighted in soft warm beach light.
+--------------------------------------------------------------------------------
+Prompt Number: 14
+Reason: WaveSpeed task failed: Content flagged as potentially sensitive. Please try different prompts or images.
+Prompt: The exact same woman from the reference image with identical face, hair, and body, wearing an off-shoulder top and fitted lingerie, seated on a dock edge with a confident lean, in photorealistic warm summer evening illumination.
+--------------------------------------------------------------------------------
+Prompt Number: 15
+Reason: WaveSpeed task failed: Content flagged as potentially sensitive. Please try different prompts or images.
+Prompt: The exact same woman from the reference image with identical face, hair, and body, in a deep V-neck crop top and bikini, interacting with flowers in a garden, reclining slightly with open posture under soft warm light.
+--------------------------------------------------------------------------------
+Prompt Number: 16
+Reason: WaveSpeed task failed: Content flagged as potentially sensitive. Please try different prompts or images.
+Prompt: The exact same woman from the reference image with identical face, hair, and body, dressed in a plunging neckline dress, leaning forward near a waterfront, playful expression in high-visual-appeal warm outdoor setting.
+--------------------------------------------------------------------------------
+Prompt Number: 18
+Reason: WaveSpeed task failed: Content flagged as potentially sensitive. Please try different prompts or images.
+Prompt: The exact same woman from the reference image with identical face, hair, and body, in an unzipped hoodie over a push-up bra, reclining on outdoor steps, form-flattering pose in photorealistic warm golden light.
+--------------------------------------------------------------------------------
+Prompt Number: 19
+Reason: WaveSpeed task failed: Content flagged as potentially sensitive. Please try different prompts or images.
+Prompt: The exact same woman from the reference image with identical face, hair, and body, dressed in a bodycon dress with deep neckline, over-the-shoulder glance while seated on a bench, confident curves in soft warm park lighting.
+--------------------------------------------------------------------------------
+Prompt Number: 20
+Reason: WaveSpeed task failed: Content flagged as potentially sensitive. Please try different prompts or images.
+Prompt: The exact same woman from the reference image with identical face, hair, and body, wearing a low-cut crop top and string bikini, interacting with a summer breeze on a deck, leaning with open posture in high-appeal warm light.
+--------------------------------------------------------------------------------

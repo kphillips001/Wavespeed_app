@@ -1,0 +1,43 @@
+Failed WaveSpeed Prompts
+================================================================================
+
+Prompt Number: 1
+Reason: WaveSpeed task failed: Content flagged as potentially sensitive. Please try different prompts or images.
+Prompt: The exact same woman from the reference image with identical face, hair, and body, wearing a string bikini, leaning forward against a palm tree on a sunny beach, playful expression with soft warm lighting accentuating her curves.
+--------------------------------------------------------------------------------
+Prompt Number: 3
+Reason: WaveSpeed task failed: Content flagged as potentially sensitive. Please try different prompts or images.
+Prompt: The exact same woman from the reference image with identical face, hair, and body, dressed in fitted lingerie, reclining on a plush couch in a cozy bedroom, open posture with natural lighting from a window.
+--------------------------------------------------------------------------------
+Prompt Number: 6
+Reason: WaveSpeed task failed: Content flagged as potentially sensitive. Please try different prompts or images.
+Prompt: The exact same woman from the reference image with identical face, hair, and body, wearing an off-shoulder top, interacting with a flower in a garden, leaning slightly with a candid smile in soft daylight.
+--------------------------------------------------------------------------------
+Prompt Number: 7
+Reason: WaveSpeed task failed: Content flagged as potentially sensitive. Please try different prompts or images.
+Prompt: The exact same woman from the reference image with identical face, hair, and body, in a push-up bra under an open jacket, seated at an outdoor cafe table, forward-leaning posture with warm evening lights.
+--------------------------------------------------------------------------------
+Prompt Number: 9
+Reason: WaveSpeed task failed: Content flagged as potentially sensitive. Please try different prompts or images.
+Prompt: The exact same woman from the reference image with identical face, hair, and body, wearing a low-cut top, leaning against a balcony railing indoors, open body stance with warm indoor lighting.
+--------------------------------------------------------------------------------
+Prompt Number: 11
+Reason: WaveSpeed task failed: Content flagged as potentially sensitive. Please try different prompts or images.
+Prompt: The exact same woman from the reference image with identical face, hair, and body, sporting a bikinis, interacting with ocean waves on a beach, reclined pose with warm natural light.
+--------------------------------------------------------------------------------
+Prompt Number: 12
+Reason: WaveSpeed task failed: Content flagged as potentially sensitive. Please try different prompts or images.
+Prompt: The exact same woman from the reference image with identical face, hair, and body, in fitted lingerie, seated on a window sill in a bedroom, forward-leaning with a natural gaze under soft morning light.
+--------------------------------------------------------------------------------
+Prompt Number: 19
+Reason: WaveSpeed task failed: Content flagged as potentially sensitive. Please try different prompts or images.
+Prompt: The exact same woman from the reference image with identical face, hair, and body, in a plunging neckline dress, interacting with a book on a sofa, reclined pose with soft reading lamp light.
+--------------------------------------------------------------------------------
+Prompt Number: 21
+Reason: WaveSpeed task failed: Content flagged as potentially sensitive. Please try different prompts or images.
+Prompt: The exact same woman from the reference image with identical face, hair, and body, dressed in fitted lingerie, walking down a hallway indoors, confident stride with ambient hallway light.
+--------------------------------------------------------------------------------
+Prompt Number: 23
+Reason: WaveSpeed task failed: Content flagged as potentially sensitive. Please try different prompts or images.
+Prompt: The exact same woman from the reference image with identical face, hair, and body, sporting an open jacket over a push-up bra, interacting with a pet on a rug, seated lean with warm room lighting.
+--------------------------------------------------------------------------------

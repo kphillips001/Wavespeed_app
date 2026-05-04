@@ -1,0 +1,23 @@
+Failed WaveSpeed Prompts
+================================================================================
+
+Prompt Number: 2
+Reason: WaveSpeed task failed: Content flagged as potentially sensitive. Please try different prompts or images.
+Prompt: The exact same woman from the reference image with identical face, hair, and body, in a string bikini, leaning against a wooden fence in an outdoor beach setting with soft warm lighting, adopting an angled torso pose for a natural candid expression that emphasizes her figure.
+--------------------------------------------------------------------------------
+Prompt Number: 3
+Reason: WaveSpeed task failed: Content flagged as potentially sensitive. Please try different prompts or images.
+Prompt: The exact same woman from the reference image with identical face, hair, and body, dressed in a bodycon dress with a deep plunging neckline, reclining on a outdoor lounge bed with soft warm lighting, using an open posture to showcase her silhouette in a confident, playful manner.
+--------------------------------------------------------------------------------
+Prompt Number: 7
+Reason: WaveSpeed task failed: Content flagged as potentially sensitive. Please try different prompts or images.
+Prompt: The exact same woman from the reference image with identical face, hair, and body, in fitted lingerie under a partially open shirt, seated at a desk in an indoor bedroom with soft warm lighting, adopting a relaxed yet angled posture that playfully accentuates her form.
+--------------------------------------------------------------------------------
+Prompt Number: 9
+Reason: WaveSpeed task failed: Content flagged as potentially sensitive. Please try different prompts or images.
+Prompt: The exact same woman from the reference image with identical face, hair, and body, in a push-up bra under an unzipped hoodie and shorts, walking through a cozy indoor hallway with soft warm lighting, framed with an open, angled torso to highlight her upper body in a playful way.
+--------------------------------------------------------------------------------
+Prompt Number: 10
+Reason: WaveSpeed task failed: Content flagged as potentially sensitive. Please try different prompts or images.
+Prompt: The exact same woman from the reference image with identical face, hair, and body, wearing a bikini top with a deep neckline and shorts, leaning over a railing in an outdoor terrace with soft warm lighting, posing with a confident expression and forward-leaning stance for clear figure enhancement.
+--------------------------------------------------------------------------------

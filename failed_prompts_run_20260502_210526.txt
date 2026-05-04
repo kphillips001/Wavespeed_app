@@ -1,0 +1,19 @@
+Failed WaveSpeed Prompts
+================================================================================
+
+Prompt Number: 1
+Reason: WaveSpeed task failed: Content flagged as potentially sensitive. Please try different prompts or images.
+Prompt: The exact same woman from the reference image with identical face, hair, and body, seated on a lounge chair outdoors in a string bikini, leaning forward with a playful smile and open posture, soft warm sunlight highlighting her curves.
+--------------------------------------------------------------------------------
+Prompt Number: 3
+Reason: WaveSpeed task failed: Content flagged as potentially sensitive. Please try different prompts or images.
+Prompt: The exact same woman from the reference image with identical face, hair, and body, reclining on a beach towel outdoors in fitted lingerie, playfully arching her back, soft warm evening glow emphasizing her figure.
+--------------------------------------------------------------------------------
+Prompt Number: 8
+Reason: WaveSpeed task failed: Content flagged as potentially sensitive. Please try different prompts or images.
+Prompt: The exact same woman from the reference image with identical face, hair, and body, reclining against a tree outdoors in a push-up bra under an unzipped hoodie, relaxed yet open posture, soft warm sunlight accentuating her silhouette.
+--------------------------------------------------------------------------------
+Prompt Number: 9
+Reason: WaveSpeed task failed: Content flagged as potentially sensitive. Please try different prompts or images.
+Prompt: The exact same woman from the reference image with identical face, hair, and body, walking towards the camera in a plunging neckline top and denim shorts, confident and candid stride outdoors, soft warm golden hour light.
+--------------------------------------------------------------------------------

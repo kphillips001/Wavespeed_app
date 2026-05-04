@@ -1,0 +1,23 @@
+Failed WaveSpeed Prompts
+================================================================================
+
+Prompt Number: 3
+Reason: WaveSpeed task failed: Content flagged as potentially sensitive. Please try different prompts or images.
+Prompt: The exact same woman from the reference image with identical face, hair, and body, wearing a deep V-neck top, reclining on a lounge chair with an open posture, in a relaxed indoor bedroom with soft warm lighting.
+--------------------------------------------------------------------------------
+Prompt Number: 6
+Reason: WaveSpeed task failed: Content flagged as potentially sensitive. Please try different prompts or images.
+Prompt: The exact same woman from the reference image with identical face, hair, and body, in fitted lingerie, leaning forward over a balcony rail, in an urban outdoor terrace with soft warm lighting.
+--------------------------------------------------------------------------------
+Prompt Number: 16
+Reason: WaveSpeed task failed: Content flagged as potentially sensitive. Please try different prompts or images.
+Prompt: The exact same woman from the reference image with identical face, hair, and body, in an open jacket, leaning forward against a tree with a teasing glance, in a forested outdoor setting with soft warm lighting.
+--------------------------------------------------------------------------------
+Prompt Number: 17
+Reason: WaveSpeed task failed: Content flagged as potentially sensitive. Please try different prompts or images.
+Prompt: The exact same woman from the reference image with identical face, hair, and body, wearing a fitted lingerie set, seated on a stool with an open posture and playful expression, in a dimly lit indoor studio with soft warm lighting.
+--------------------------------------------------------------------------------
+Prompt Number: 18
+Reason: WaveSpeed task failed: Content flagged as potentially sensitive. Please try different prompts or images.
+Prompt: The exact same woman from the reference image with identical face, hair, and body, in a deep V-neck top, interacting with a book on a table with a forward lean, in a quiet indoor library with soft warm lighting.
+--------------------------------------------------------------------------------

@@ -136,45 +136,165 @@ def get_meta_prompt_request():
 # BUILD META PROMPT
 # -----------------------------
 def build_chatgpt_prompt(prompt_count, user_request):
+
+    # 🔥 SFW SEXY OUTFIT BIAS
+    outfit_bias = """
+low-cut tops, deep V-neck tops, plunging necklines, bikinis, string bikinis,
+bikini tops, denim shorts, daisy duke shorts, crop tops, tight tank tops,
+push-up bras under visible tops, fitted lingerie-inspired outfits, open jackets,
+unzipped hoodies, partially open shirts, off-shoulder tops, tight mini dresses,
+bodycon dresses with deep neckline, tight athletic tops, tight gym sets,
+tight leggings, fitted summer outfits, teasing but SFW social media outfits
+"""
+
+    base_style = f"""Glamorous, photorealistic, SFW social-media-ready feminine styling designed to attract male attention, strong curvy silhouette, sexy fitted outfits, revealing but non-explicit clothing, confident playful body language, flirtatious but safe-for-social-media posing, natural candid positioning, indoor and outdoor environments, soft warm lighting, high visual appeal, scroll-stopping attraction, OUTFIT PRIORITY: {outfit_bias}"""
+
+    combined_request = f"{base_style}, {user_request}"
+
     return f"""I need a list of {prompt_count} high-quality image-to-image editing prompts.
 
 These prompts will always be used with the SAME reference image, so every prompt MUST preserve the exact same woman.
 
 User request:
-{user_request}
+{combined_request}
 
-STRICT IDENTITY RULES (VERY IMPORTANT):
-- Every prompt MUST preserve the EXACT same woman from the reference image
-- Maintain identical facial features, bone structure, and identity
-- Maintain the SAME hair color, hairstyle, and hair length (DO NOT change hair color)
-- Maintain the SAME body type and proportions
-- Maintain the SAME breast size and shape
-- Do NOT change ethnicity, face, or physical identity in any way
+--------------------------------------------------
+🔥 PRIMARY PURPOSE / SOCIAL MEDIA LAYER (CRITICAL)
+--------------------------------------------------
 
-POSE DIVERSITY RULES (VERY IMPORTANT):
-- Distribute the prompts across clearly different pose categories
-- Include a balanced mix of seated poses, leaning poses, laying or reclining poses, walking or movement poses, over-the-shoulder poses, and environment-interaction poses
-- Do NOT let multiple prompts feel like the same stance with only outfit changes
-- Do NOT use hands on hips
-- Do NOT use stiff straight-on standing poses unless explicitly requested
-- Each prompt must describe the pose clearly and specifically
-- Prioritize natural, candid, seductive, varied body language
+These prompts are for SFW social media images designed to attract male attention and drive curiosity toward a link.
 
-PROMPT STRUCTURE:
-- Each prompt MUST start with:
-  "The exact same woman from the reference image with identical face, hair, and body,"
+Every image MUST be:
+- Sexy
+- SFW
+- Scroll-stopping
+- Visually attractive to men
+- Flirty, confident, and attention-grabbing
+- Teasing without nudity or explicit sexual content
 
-CONTENT RULES:
-- Each prompt must be 1 single line
+Do NOT generate:
+- plain outfits
+- conservative or modest styling
+- boring or low-attraction visuals
+
+--------------------------------------------------
+🔥 KEYWORD INTERPRETATION SYSTEM (CRITICAL)
+--------------------------------------------------
+
+The user's input defines the PRIMARY outfit direction.
+
+1. SPECIFIC ITEM (e.g. "denim shorts", "bikini top"):
+   - MUST appear in EVERY prompt
+   - DO NOT replace or remove it
+
+2. GENERAL STYLE (e.g. "tight clothing", "sexy attire"):
+   - Generate variety within the theme
+   - NEVER drift outside the theme
+
+3. MULTIPLE ITEMS:
+   - ALL must appear in EVERY prompt
+
+--------------------------------------------------
+🔥 SEX APPEAL ENFORCEMENT (CRITICAL)
+--------------------------------------------------
+
+Every prompt MUST be designed to attract male attention.
+
+- Outfits must be tight, fitted, and curve-enhancing
+- Emphasize waist, hips, chest framing, and legs
+- Use teasing, revealing (but SFW) styling
+- Expressions must be confident, playful, or seductive
+- Poses must feel inviting, natural, and engaging
+
+Avoid:
+- baggy clothing
+- neutral poses
+- low-energy expressions
+- anything that hides the body
+
+--------------------------------------------------
+🔥 SETTING + ENVIRONMENT SYSTEM (CRITICAL)
+--------------------------------------------------
+
+Each prompt MUST include a strong, attractive setting.
+
+Use a wide variety:
+
+INDOOR:
+- bedroom (bed edge, sheets)
+- couch / living room
+- kitchen counter
+- mirror selfie (bathroom)
+- doorway / hallway
+- window lighting scenes
+
+OUTDOOR:
+- beach
+- poolside
+- balcony
+- patio
+- stairs
+- street-style candid
+- car setting
+
+ACTIVE:
+- gym mirror
+- walking outdoors
+- casual lifestyle scenes
+
+RULES:
+- Every prompt should use a DIFFERENT setting
+- No generic environments ("indoors", "outside")
+- Setting must enhance pose + outfit
+- Must feel Instagram-ready and realistic
+
+--------------------------------------------------
+🔥 POSE + CAMERA ENFORCEMENT (CRITICAL)
+--------------------------------------------------
+
+- Use leaning, seated, reclining, walking, or over-the-shoulder poses
+- Use mirror selfies where appropriate
+- Use angled torso or forward lean
+- Camera must highlight chest, waist, hips, legs
+
+NEVER:
+- stiff poses
+- flat posture
+- hidden body angles
+
+--------------------------------------------------
+🔥 POSE DIVERSITY RULES
+--------------------------------------------------
+
+- Every prompt must feel different
+- Mix pose types across prompts
+- Avoid repetition
+
+--------------------------------------------------
+STRICT IDENTITY RULES
+--------------------------------------------------
+
+- SAME woman always
+- SAME face, hair, body
+
+--------------------------------------------------
+PROMPT STRUCTURE
+--------------------------------------------------
+
+Each prompt MUST start with:
+"The exact same woman from the reference image with identical face, hair, and body,"
+
+--------------------------------------------------
+CONTENT RULES
+--------------------------------------------------
+
+- One line per prompt
 - No numbering
-- No bullet points
-- No extra explanations
+- No explanations
 - No emojis
-- Each prompt should be clearly different
-- Focus ONLY on changing outfit, pose, setting, framing, expression, and lighting
-- Keep prompts photorealistic and realistic
-- Do NOT introduce a new person
-- Do NOT use vague phrases like "a woman" or "a female model"
+- Photorealistic
+- SFW only
+- No other people
 
 Return ONLY the list of prompts."""
 
@@ -182,18 +302,30 @@ Return ONLY the list of prompts."""
 # -----------------------------
 # CALL CHATGPT
 # -----------------------------
-def generate_prompts_with_gpt(meta_prompt, api_key):
-    client = OpenAI(api_key=api_key)
+def generate_prompts_with_grok(meta_prompt, api_key):
+    import requests
 
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
+    url = "https://api.x.ai/v1/chat/completions"
+
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "model": "grok-3-mini",
+        "messages": [
             {"role": "user", "content": meta_prompt}
         ],
-        temperature=0.9
-    )
+        "temperature": 0.9
+    }
 
-    content = response.choices[0].message.content.strip()
+    response = requests.post(url, headers=headers, json=payload, timeout=120)
+    response.raise_for_status()
+
+    data = response.json()
+
+    content = data["choices"][0]["message"]["content"].strip()
 
     prompts = []
     for line in content.split("\n"):
@@ -646,12 +778,12 @@ def run_wavespeed(prompts, wavespeed_key, imgbb_key, selected_model, persona_cho
 def main():
     load_dotenv()
 
-    openai_key = os.getenv("OPENAI_API_KEY")
+    grok_key = os.getenv("GROK_API_KEY")
     wavespeed_key = os.getenv("WAVESPEED_API_KEY")
     imgbb_key = os.getenv("IMGBB_API_KEY")
 
-    if not openai_key:
-        raise ValueError("Missing OPENAI_API_KEY in .env")
+    if not grok_key:
+        raise ValueError("Missing GROK_API_KEY in .env")
     if not wavespeed_key:
         raise ValueError("Missing WAVESPEED_API_KEY in .env")
     if not imgbb_key:
@@ -673,7 +805,7 @@ def main():
     meta_prompt = build_chatgpt_prompt(prompt_count, user_request.strip())
 
     print("\n🤖 Generating prompts with ChatGPT...\n")
-    prompts = generate_prompts_with_gpt(meta_prompt, openai_key)
+    prompts = generate_prompts_with_grok(meta_prompt, grok_key)
     show_result(prompts)
 
     selected_model = select_model()
