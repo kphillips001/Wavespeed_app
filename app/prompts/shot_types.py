@@ -1,0 +1,17 @@
+SHOT_TYPES = [
+    "cinematic candid moment",
+    "confident full-body glamour pose",
+    "walking lifestyle shot",
+    "over-the-shoulder pose",
+    "social-media style selfie framing",
+    "close-up beauty portrait",
+    "editorial fashion angle",
+    "natural relaxed candid",
+    "luxury influencer composition",
+    "soft lifestyle glamour framing",
+    "seated confident pose",
+    "leaning casual pose",
+    "dynamic movement shot",
+    "high-end social media aesthetic",
+    "vacation-style glamour photography",
+]
