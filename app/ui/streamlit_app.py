@@ -90,6 +90,97 @@ def save_generated_images(
 
     return saved_paths
 
+def build_photoshoot_meta_prompt(prompt_count, shot_ideas=None):
+    shot_ideas = shot_ideas or []
+
+    filled_shots = [
+        shot.strip()
+        for shot in shot_ideas
+        if shot.strip()
+    ]
+
+    shot_text = ""
+
+    if filled_shots:
+        shot_text = "\nSpecific shot ideas to include:\n"
+
+        for i, shot in enumerate(filled_shots, start=1):
+            shot_text += f"{i}. {shot}\n"
+
+    return f"""
+Create exactly {prompt_count} image-to-image photoshoot prompts.
+
+These prompts will use a reference image.
+
+Every prompt must preserve:
+- same woman / same identity
+- same outfit
+- same setting
+- same lighting
+- same mood
+- same personality
+- same visual style
+- same overall aesthetic
+
+Every prompt should create a new photoshoot variation:
+- different pose
+- different camera angle
+- different body position
+- different expression
+- natural realistic movement
+
+Keep the images realistic, sexy, confident, social-media-ready, and high quality.
+
+{shot_text}
+
+If fewer shot ideas are provided than {prompt_count}, fill the remaining prompts with natural photoshoot variations that preserve the reference image aesthetic.
+
+Return only the prompts as a numbered list.
+"""
+
+def build_photoshoot_prompt(
+    shot_idea=None
+):
+
+    base_prompt = """
+Create a new image from the supplied reference image.
+
+Keep the same:
+
+- character identity
+- outfit
+- location
+- environment
+- lighting
+- personality
+- facial appearance
+- vibe
+- energy
+- aesthetics
+
+Generate a new natural photoshoot variation.
+
+Change:
+- pose
+- body position
+- camera angle
+- expression
+- movement
+
+Make it realistic and visually attractive.
+"""
+
+    if shot_idea and shot_idea.strip():
+
+        base_prompt += f"""
+
+Specific shot request:
+
+{shot_idea}
+"""
+
+    return base_prompt
+
 
 st.set_page_config(
     page_title="WaveSpeed AI Studio",
@@ -103,6 +194,26 @@ if st.session_state.get("save_toast_message"):
     st.toast(st.session_state["save_toast_message"], icon="✅")
     st.session_state["save_toast_message"] = None
 
+if "photoshoot_queue" not in st.session_state:
+    st.session_state["photoshoot_queue"] = []
+
+if "show_photoshoot_queue" not in st.session_state:
+    st.session_state["show_photoshoot_queue"] = False
+
+if "active_photoshoot" not in st.session_state:
+    st.session_state["active_photoshoot"] = False
+
+if "active_photoshoot_reference" not in st.session_state:
+    st.session_state["active_photoshoot_reference"] = None
+
+if "active_photoshoot_results" not in st.session_state:
+    st.session_state["active_photoshoot_results"] = []
+
+if "approved_photoshoot_results" not in st.session_state:
+    st.session_state["approved_photoshoot_results"] = []
+
+    if "photoshoot_upload_key" not in st.session_state:
+        st.session_state["photoshoot_upload_key"] = 0
 
 # -----------------------------
 # SIDEBAR
@@ -186,9 +297,12 @@ uploaded_file = st.file_uploader(
 
 st.subheader("Creative Tags")
 
+if "creative_tags_key" not in st.session_state:
+    st.session_state["creative_tags_key"] = 0
+
 user_tags = st.text_area(
     "Creative Tags",
-    key="creative_tags",
+    key=f"creative_tags_{st.session_state['creative_tags_key']}",
     placeholder="Example: bikini, summertime, lake"
 )
 
@@ -541,18 +655,20 @@ if (
     st.markdown("---")
     st.subheader("Final Generated Images")
 
-    cols = st.columns(2)
+    cols = st.columns(3)
 
     for i, image_item in enumerate(st.session_state["generated_images"]):
         image_id = image_item.get("id", f"image_{i + 1}")
 
-        with cols[i % 2]:
+        with cols[i % 3]:
 
             st.image(image_item["url"], use_container_width=True)
 
+            st.checkbox("Discard", key=f"discard_{image_id}")
+
             st.checkbox(
-                "Mark for discard",
-                key=f"discard_{image_id}",
+                "Add to Photoshoot Queue",
+                key=f"photoshoot_{image_id}",
             )
 
             with st.expander("Prompt"):
@@ -560,87 +676,100 @@ if (
 
     st.markdown("---")
 
-    # =====================================
-    # DETERMINE DISCARDS
-    # =====================================
-
     discard_ids = []
+    photoshoot_ids = []
 
-    for i, image_item in enumerate(st.session_state["generated_images"]):
-        image_id = image_item.get("id", f"image_{i + 1}")
+    for image_item in st.session_state["generated_images"]:
+        image_id = image_item.get("id")
 
         if st.session_state.get(f"discard_{image_id}", False):
             discard_ids.append(image_id)
 
-    # =====================================
-    # BUTTON LABEL LOGIC
-    # =====================================
+        if st.session_state.get(f"photoshoot_{image_id}", False):
+            photoshoot_ids.append(image_id)
+
+    photoshoot_ids = [
+        image_id for image_id in photoshoot_ids
+        if image_id not in discard_ids
+    ]
 
     if discard_ids:
         button_label = "🗑️ Discard Selected"
-
-    elif st.session_state.get("discard_happened", False):
-        button_label = "💾 Save Remaining Images"
-
     else:
         button_label = "💾 Save All Images"
 
-    # =====================================
-    # MAIN ACTION BUTTON
-    # =====================================
-
     if st.button(button_label, use_container_width=True):
-
-        # =================================
-        # DISCARD MODE
-        # =================================
 
         if discard_ids:
 
             st.session_state["generated_images"] = [
-                image_item
-                for image_item in st.session_state["generated_images"]
-                if image_item.get("id") not in discard_ids
+                img for img in st.session_state["generated_images"]
+                if img["id"] not in discard_ids
             ]
 
-            st.session_state["discard_happened"] = True
-
-            st.success(
-                f"Discarded {len(discard_ids)} image(s)."
+            st.session_state["save_toast_message"] = (
+                f"🗑️ Discarded {len(discard_ids)} image(s)"
             )
 
             st.rerun()
 
-                # =================================
-        # SAVE MODE
-        # =================================
-
         else:
+
+            normal_save_images = []
+            photoshoot_save_images = []
+
+            for image_item in st.session_state["generated_images"]:
+                image_id = image_item.get("id")
+
+                if image_id in photoshoot_ids:
+                    photoshoot_save_images.append(image_item)
+                else:
+                    normal_save_images.append(image_item)
 
             selected_model = MODELS["2"]
 
-            saved_paths = save_generated_images(
-                images=st.session_state["generated_images"],
-                output_dir=selected_output_dir,
-                creator_name=selected_creator_name,
-                model_name=selected_model["name"],
-                user_tags=st.session_state.get("last_user_tags", user_tags),
-                generation_mode=st.session_state.get("last_generation_mode", generation_mode),
-                platform_mode=st.session_state.get("last_platform_mode", platform_mode),
-                spice_level=st.session_state.get("last_spice_level", spice_level),
-                uploaded_file=uploaded_file,
-            )
+            normal_saved_count = 0
+            photoshoot_saved_count = 0
 
-            saved_count = len(st.session_state["generated_images"])
+            if normal_save_images:
+                save_generated_images(
+                    images=normal_save_images,
+                    output_dir=selected_output_dir,
+                    creator_name=selected_creator_name,
+                    model_name=selected_model["name"],
+                    user_tags=st.session_state.get("last_user_tags", user_tags),
+                    generation_mode=st.session_state.get("last_generation_mode", generation_mode),
+                    platform_mode=st.session_state.get("last_platform_mode", platform_mode),
+                    spice_level=st.session_state.get("last_spice_level", spice_level),
+                    uploaded_file=uploaded_file,
+                )
 
-            # Single temporary success toast
+                normal_saved_count = len(normal_save_images)
+
+            photoshoot_output_dir = r"D:\Ava Blackthorne\Ready\Wavespeed\Photoshoot"
+
+            if photoshoot_save_images:
+                save_generated_images(
+                    images=photoshoot_save_images,
+                    output_dir=photoshoot_output_dir,
+                    creator_name=selected_creator_name,
+                    model_name=selected_model["name"],
+                    user_tags=st.session_state.get("last_user_tags", user_tags),
+                    generation_mode=st.session_state.get("last_generation_mode", generation_mode),
+                    platform_mode=st.session_state.get("last_platform_mode", platform_mode),
+                    spice_level=st.session_state.get("last_spice_level", spice_level),
+                    uploaded_file=uploaded_file,
+                )
+
+                photoshoot_saved_count = len(photoshoot_save_images)
+
             st.session_state["save_toast_message"] = (
-                f"✅ Saved {saved_count} image(s) to: {selected_output_dir}"
+                f"✅ Saved {normal_saved_count} image(s). "
+                f"📸 Sent {photoshoot_saved_count} image(s) to Photoshoot."
             )
 
             st.session_state["save_toast_time"] = time.time()
 
-            # Reset everything for next generation
             st.session_state["generated_images"] = []
             st.session_state["failed_images"] = []
             st.session_state["generated_prompts"] = []
@@ -649,44 +778,459 @@ if (
             st.session_state["generation_complete"] = False
             st.session_state["generation_status"] = ""
 
-            # Reset reference image
             st.session_state["uploader_key"] += 1
-
-            # Reset creative tags
-            st.session_state["creative_tags"] = ""
+            st.session_state["creative_tags_key"] += 1
 
             st.rerun()
-    
-# -----------------------------
-# UPLOADED IMAGE PREVIEW
-# -----------------------------
-if uploaded_file:
-    st.markdown("### Uploaded Reference Image")
-    st.image(uploaded_file, width=300)
-
 
 # -----------------------------
-# FUTURE SECTION
+# PHOTOSHOOT QUEUE DISPLAY
 # -----------------------------
-st.markdown("---")
-
-st.subheader("Future Workflow")
-
-st.markdown(
-    """
-Future UI flow:
-
-1. Generate Variety Batch
-2. Display generated images
-3. Select favorite image
-4. Generate:
-   - Photoshoot Set
-   - Story Sequence
-   - Caption Packs
-5. Send to:
-   - Instagram
-   - X
-   - Telegram
-   - Fanvue
-"""
+photoshoot_output_dir = Path(
+    r"D:\Ava Blackthorne\Ready\Wavespeed\Photoshoot"
 )
+
+photoshoot_output_dir.mkdir(
+    parents=True,
+    exist_ok=True
+)
+
+photoshoot_images = sorted(
+    [
+        image_path
+        for image_path in photoshoot_output_dir.iterdir()
+        if image_path.suffix.lower()
+        in [".png", ".jpg", ".jpeg", ".webp"]
+    ],
+    key=lambda path: path.stat().st_mtime,
+    reverse=True,
+)
+
+# ==========================
+# SIDEBAR PHOTOSHOOT SECTION
+# ==========================
+
+st.sidebar.markdown("---")
+st.sidebar.header("Photoshoot")
+
+st.sidebar.caption(
+    f"{len(photoshoot_images)} image(s) queued"
+)
+
+if st.sidebar.button(
+    "📸 Enter Photoshoot Queue",
+    use_container_width=True
+):
+    st.session_state["show_photoshoot_queue"] = True
+    st.rerun()
+
+# ==========================
+# MAIN PAGE PHOTOSHOOT VIEW
+# ==========================
+
+if (
+    st.session_state.get("show_photoshoot_queue", False)
+    and not st.session_state.get("active_photoshoot", False)
+):
+
+    st.markdown("---")
+
+    if "photoshoot_upload_key" not in st.session_state:
+        st.session_state["photoshoot_upload_key"] = 0
+
+    header_col1, header_col2 = st.columns([8, 2])
+
+    with header_col1:
+        st.subheader("📸 Photoshoot Queue Manager")
+
+    with header_col2:
+        if st.button(
+            "⬅ Back",
+            key="back_generator",
+            use_container_width=True
+        ):
+            st.session_state["show_photoshoot_queue"] = False
+            st.rerun()
+
+    st.markdown("### ➕ Add Image To Photoshoot Queue")
+
+    uploaded_photoshoot = st.file_uploader(
+        "",
+        type=["png", "jpg", "jpeg", "webp"],
+        key=f"photoshoot_queue_upload_{st.session_state['photoshoot_upload_key']}"
+    )
+
+    if uploaded_photoshoot:
+
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        file_suffix = Path(uploaded_photoshoot.name).suffix.lower()
+
+        save_path = photoshoot_output_dir / f"queue_{timestamp}{file_suffix}"
+
+        with open(save_path, "wb") as f:
+            f.write(uploaded_photoshoot.getbuffer())
+
+        st.session_state["photoshoot_upload_key"] += 1
+        st.session_state["save_toast_message"] = "📸 Added to Photoshoot Queue"
+
+        st.rerun()
+
+    st.markdown("---")
+
+    photoshoot_images = sorted(
+        [
+            image_path
+            for image_path in photoshoot_output_dir.iterdir()
+            if image_path.suffix.lower() in [".png", ".jpg", ".jpeg", ".webp"]
+        ],
+        key=lambda path: path.stat().st_mtime,
+        reverse=True,
+    )
+
+    if not photoshoot_images:
+
+        st.warning("No images currently in Photoshoot Queue.")
+
+    else:
+
+        cols = st.columns(2)
+
+        for i, image_path in enumerate(photoshoot_images):
+
+            image_key = image_path.stem
+
+            with cols[i % 2]:
+
+                st.image(
+                    str(image_path),
+                    use_container_width=True
+                )
+
+                photoshoot_count = st.number_input(
+                    "Number of Photoshoot Images",
+                    min_value=1,
+                    max_value=25,
+                    value=5,
+                    key=f"photoshoot_count_{image_key}",
+                )
+
+                shot_ideas = []
+
+                with st.expander(
+                    "Shot Ideas Optional",
+                    expanded=False
+                ):
+
+                    for shot_index in range(1, photoshoot_count + 1):
+
+                        shot_text = st.text_input(
+                            f"Shot {shot_index}",
+                            key=f"shot_{image_key}_{shot_index}",
+                            placeholder="Optional: sitting on rock, walking trail, leaning on tree...",
+                        )
+
+                        shot_ideas.append(shot_text)
+
+                if st.button(
+                    "🚀 Start Photoshoot",
+                    key=f"start_photoshoot_{image_key}",
+                    use_container_width=True,
+                ):
+
+                    if not grok_key:
+                        st.error("Missing GROK_API_KEY in .env")
+                        st.stop()
+
+                    if not wavespeed_key:
+                        st.error("Missing WAVESPEED_API_KEY in .env")
+                        st.stop()
+
+                    if not imgbb_key:
+                        st.error("Missing IMGBB_API_KEY in .env")
+                        st.stop()
+
+                    st.session_state["active_photoshoot"] = True
+                    st.session_state["show_photoshoot_queue"] = False
+                    st.session_state["active_photoshoot_reference"] = str(image_path)
+                    st.session_state["active_photoshoot_count"] = photoshoot_count
+                    st.session_state["active_photoshoot_shot_ideas"] = shot_ideas
+                    st.session_state["active_photoshoot_results"] = []
+                    st.session_state["approved_photoshoot_results"] = []
+
+                    selected_model = MODELS["2"]
+
+                    status_box = st.empty()
+                    progress_bar = st.progress(0)
+                    live_gallery = st.empty()
+
+                    photoshoot_meta_prompt = build_photoshoot_meta_prompt(
+                        prompt_count=photoshoot_count,
+                        shot_ideas=shot_ideas,
+                    )
+
+                    photoshoot_prompts = generate_prompts_with_grok(
+                        photoshoot_meta_prompt,
+                        grok_key,
+                    )
+
+                    with st.spinner("Uploading photoshoot reference image..."):
+
+                        image_url = upload_to_imgbb(
+                            str(image_path),
+                            imgbb_key,
+                        )
+
+                        verify_image_url(image_url)
+
+                    completed_count = 0
+                    failed_count = 0
+
+                    for index, prompt_text in enumerate(
+                        photoshoot_prompts[:photoshoot_count],
+                        start=1
+                    ):
+
+                        remaining_count = (
+                            photoshoot_count
+                            - completed_count
+                            - failed_count
+                        )
+
+                        status_box.info(
+                            f"Photoshoot image {index} of {photoshoot_count}: processing... "
+                            f"✅ {completed_count} completed "
+                            f"❌ {failed_count} failed "
+                            f"⏳ {remaining_count} remaining"
+                        )
+
+                        try:
+
+                            request_id = submit_wavespeed_task(
+                                prompt=prompt_text,
+                                image_url=image_url,
+                                api_key=wavespeed_key,
+                                model_url=selected_model["endpoint"],
+                            )
+
+                            output_url = poll_wavespeed_result(
+                                request_id=request_id,
+                                api_key=wavespeed_key,
+                            )
+
+                            st.session_state["active_photoshoot_results"].append(
+                                {
+                                    "id": f"photoshoot_{index}",
+                                    "prompt": prompt_text,
+                                    "url": output_url,
+                                    "status": "completed",
+                                }
+                            )
+
+                            completed_count += 1
+
+                            completed_images = [
+                                result["url"]
+                                for result in st.session_state["active_photoshoot_results"]
+                                if result.get("status") == "completed"
+                            ]
+
+                            with live_gallery.container():
+
+                                st.markdown("---")
+                                st.subheader("Live Photoshoot Images")
+
+                                live_cols = st.columns(3)
+
+                                for img_index, img_url in enumerate(completed_images):
+
+                                    with live_cols[img_index % 3]:
+
+                                        st.image(
+                                            img_url,
+                                            use_container_width=True
+                                        )
+
+                        except Exception as error:
+
+                            st.session_state["active_photoshoot_results"].append(
+                                {
+                                    "id": f"photoshoot_{index}",
+                                    "prompt": prompt_text,
+                                    "error": str(error),
+                                    "status": "failed",
+                                }
+                            )
+
+                            failed_count += 1
+
+                        progress_bar.progress(index / photoshoot_count)
+
+                    status_box.success(
+                        f"Photoshoot complete "
+                        f"✅ {completed_count} completed "
+                        f"❌ {failed_count} failed"
+                    )
+
+                    live_gallery.empty()
+
+                    st.rerun()
+
+
+# ==========================
+# ACTIVE PHOTOSHOOT
+# ==========================
+
+if (
+    st.session_state.get("active_photoshoot", False)
+    and st.session_state.get("active_photoshoot_results")
+):
+
+    st.markdown("---")
+    st.subheader("📸 Photoshoot Results")
+
+    st.markdown(
+        """
+        <style>
+        [data-testid="stImage"] img {
+            height: 400px;
+            width: 100%;
+            object-fit: cover;
+            border-radius: 12px;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    reference_path = st.session_state.get("active_photoshoot_reference")
+
+    if reference_path:
+
+        st.markdown("### Source Reference Image")
+
+        st.image(
+            reference_path,
+            width=400,
+        )
+
+    completed_results = [
+        result
+        for result in st.session_state.get("active_photoshoot_results", [])
+        if result.get("status") == "completed"
+    ]
+
+    if completed_results:
+
+        st.markdown("### Generated Photoshoot Images")
+
+        cols = st.columns(3)
+
+        for i, result_item in enumerate(completed_results):
+
+            result_id = result_item.get(
+                "id",
+                f"photoshoot_{i + 1}"
+            )
+
+            with cols[i % 3]:
+
+                st.image(
+                    result_item["url"],
+                    use_container_width=True,
+                    clamp=True,
+                )
+
+                st.checkbox(
+                    "Discard",
+                    key=f"discard_photoshoot_{result_id}",
+                )
+
+                with st.expander("Prompt"):
+                    st.write(result_item["prompt"])
+
+        st.markdown("---")
+
+        discard_ids = []
+
+        for result_item in completed_results:
+
+            result_id = result_item.get("id")
+
+            if st.session_state.get(
+                f"discard_photoshoot_{result_id}",
+                False
+            ):
+                discard_ids.append(result_id)
+
+        if discard_ids:
+            photoshoot_button_label = "🗑️ Discard Selected"
+        else:
+            photoshoot_button_label = "✅ Approve All Photoshoot Images"
+
+        if st.button(
+            photoshoot_button_label,
+            use_container_width=True,
+        ):
+
+            if discard_ids:
+
+                st.session_state["active_photoshoot_results"] = [
+                    result
+                    for result in st.session_state["active_photoshoot_results"]
+                    if result.get("id") not in discard_ids
+                ]
+
+                st.session_state["save_toast_message"] = (
+                    f"🗑️ Discarded {len(discard_ids)} photoshoot image(s)"
+                )
+
+                st.rerun()
+
+            else:
+
+                photoshoot_root_dir = Path(
+                    r"D:\Ava Blackthorne\Ready\Wavespeed\Photoshoot"
+                )
+
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+                completed_folder = (
+                    photoshoot_root_dir
+                    / f"photoshoot_{timestamp}"
+                )
+
+                completed_folder.mkdir(
+                    parents=True,
+                    exist_ok=True
+                )
+
+                reference_source_path = Path(
+                    st.session_state["active_photoshoot_reference"]
+                )
+
+                reference_target_path = (
+                    completed_folder
+                    / "source_reference.png"
+                )
+
+                if reference_source_path.exists():
+
+                    reference_source_path.replace(
+                        reference_target_path
+                    )
+
+                save_generated_images(
+                    images=completed_results,
+                    output_dir=completed_folder,
+                )
+
+                st.session_state["save_toast_message"] = (
+                    f"✅ Photoshoot saved to {completed_folder}"
+                )
+
+                st.session_state["active_photoshoot"] = False
+                st.session_state["active_photoshoot_reference"] = None
+                st.session_state["active_photoshoot_results"] = []
+                st.session_state["approved_photoshoot_results"] = []
+
+                st.rerun()
