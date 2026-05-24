@@ -931,11 +931,37 @@ if (
 
                         shot_ideas.append(shot_text)
 
-                if st.button(
-                    "🚀 Start Photoshoot",
-                    key=f"start_photoshoot_{image_key}",
-                    use_container_width=True,
-                ):
+                action_col1, action_col2 = st.columns(2)
+
+                with action_col1:
+
+                    start_photoshoot_clicked = st.button(
+                        "🚀 Start Photoshoot",
+                        key=f"start_photoshoot_{image_key}",
+                        use_container_width=True,
+                    )
+
+                with action_col2:
+
+                    delete_queue_clicked = st.button(
+                        "🗑️ Delete From Queue",
+                        key=f"delete_photoshoot_queue_{image_key}",
+                        use_container_width=True,
+                    )
+
+                if delete_queue_clicked:
+
+                    image_path.unlink(
+                        missing_ok=True
+                    )
+
+                    st.session_state["save_toast_message"] = (
+                        "🗑️ Removed image from Photoshoot Queue"
+                    )
+
+                    st.rerun()
+
+                if start_photoshoot_clicked:
 
                     if not grok_key:
                         st.error("Missing GROK_API_KEY in .env")
