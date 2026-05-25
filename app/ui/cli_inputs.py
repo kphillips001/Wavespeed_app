@@ -1,7 +1,6 @@
 from app.config.settings import MODELS, PERSONA_OUTPUT_DIRS
 from app.prompts.generation_modes import GENERATION_MODES
-from app.prompts.platform_modes import PLATFORM_MODES
-from app.prompts.spice_levels import SPICE_LEVELS
+PLATFORM_MODES = {}
 
 
 def select_persona():
@@ -136,28 +135,3 @@ def select_platform_mode():
         print("❌ Invalid selection. Please enter 1-4.")
 
 
-# -----------------------------
-# SPICE LEVEL
-# -----------------------------
-def select_spice_level():
-    print("\n" + "=" * 80)
-    print(" SELECT SPICE LEVEL")
-    print("=" * 80)
-
-    print("1. Social Safe")
-    print("2. Glamour")
-    print("3. Spicy Glamour")
-    print("4. Fanvue Tease")
-    print("5. Explicit")
-
-    while True:
-        choice = input("\nEnter number (1-5): ").strip()
-
-        if choice in SPICE_LEVELS:
-            selected = SPICE_LEVELS[choice]
-
-            print(f"\n✅ Selected Spice Level: {selected}\n")
-
-            return selected
-
-        print("❌ Invalid selection. Please enter 1-5.")

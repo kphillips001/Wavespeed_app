@@ -24,7 +24,6 @@ from app.ui.cli_inputs import (
     ask_yes_no,
     select_generation_mode,
     select_platform_mode,
-    select_spice_level,
 )
 
 from app.prompts.prompt_builder import build_chatgpt_prompt
@@ -510,8 +509,7 @@ def main():
 
     generation_mode = select_generation_mode()
     platform_mode = select_platform_mode()
-    spice_level = select_spice_level()
-
+    
     prompt_count = get_prompt_count()
 
     print(f"\n✅ You want {prompt_count} prompts.")
@@ -529,7 +527,6 @@ def main():
         user_request=user_request.strip(),
         generation_mode=generation_mode,
         platform_mode=platform_mode,
-        spice_level=spice_level,
     )
 
     print("\n🤖 Generating prompts with Grok...\n")
@@ -550,7 +547,6 @@ def main():
         show_dry_run_preview(
             generation_mode=generation_mode,
             platform_mode=platform_mode,
-            spice_level=spice_level,
             user_request=user_request,
             prompts=prompts_from_file,
         )
