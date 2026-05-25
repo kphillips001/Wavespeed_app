@@ -18,7 +18,7 @@ IMPORTANT:
 - These are not hard rules.
 - Do not repeat the same shot type too often.
 - Adapt shot types dynamically to the user's tags.
-- Use them to improve pose variety, framing, camera distance, and composition.
+- Use them to improve pose variety, framing, camera distance, body orientation, and composition.
 """
 
 
@@ -33,17 +33,17 @@ def build_chatgpt_prompt(
     shot_type_context = build_shot_type_context()
 
     universal_style = f"""
-Photorealistic AI influencer photography.
+Photorealistic AI creator photography.
 
 The images should feel:
-- premium
 - realistic
-- visually compelling
-- creator-content ready
-- social-media polished
-- intentional
-- natural
+- sharp
+- detailed
 - high quality
+- creator-content ready
+- visually intentional
+- made for high engagement
+- strong enough for Nano image generation
 
 User tags/request:
 {user_request}
@@ -55,39 +55,41 @@ Creative mode:
     creative_director_rules = f"""
 CREATIVE DIRECTOR MODE:
 
-The user is NOT writing prompts.
+The user is NOT writing full prompts.
 The user is only providing creative signals.
 
 Your job is to become an AI Creative Director.
 
 IMPORTANT:
-Minimal input should produce MAXIMUM intelligent creativity.
+Minimal input must produce MAXIMUM intelligent creativity.
 
 Creative Director behavior:
 - Preserve roughly 70-80% of the user's idea and aesthetic
 - Add roughly 20-30% intelligent expansion
 - Invent realistic scene details
 - Invent realistic environments
-- Invent camera framing
-- Invent lighting
-- Invent mood
+- Invent realistic camera framing
+- Invent realistic lighting
+- Invent realistic mood
 - Invent pose ideas
 - Invent composition
-- Invent visual storytelling
 - Invent creator-style scenarios
+- Turn short keyword inputs into complete Nano-ready image prompts
+- Build full visual scenes instead of sparse prompt fragments
 
-Treat user tags as CREATIVE SIGNALS
-rather than rigid repeated objects.
+Treat user tags as CREATIVE SIGNALS rather than rigid repeated objects.
 
 Examples:
 
 cowgirl hat, desert
 
 does NOT require:
-- identical hat usage
+- identical hat usage in every image
 - identical outfits
 - identical styling
 - identical scene setup
+- identical poses
+- identical camera angles
 
 Instead intelligently preserve:
 - overall aesthetic
@@ -105,19 +107,25 @@ while varying:
 - camera framing
 - visual hooks
 - content scenarios
+- realistic objects
+- micro-behaviors
+- body orientation
+- background details
+- social-post composition
 
 Think like:
 - photographer
-- influencer content producer
+- creator content producer
 - creative director
 - visual marketing director
-- creator strategist
+- Nano prompt specialist
 
 Do NOT simply repeat keywords.
 Do NOT create duplicate ideas.
+Do NOT create sparse prompts.
 
 The batch should feel like:
-10 different posts from the same creator brand.
+{prompt_count} different posts from the same creator brand.
 
 User creative tags:
 {user_request}
@@ -142,15 +150,18 @@ RULES:
 - Create completely different image ideas
 - Keep the user's core tags/intention present
 - Treat tags as creative signals, not rigid repeated objects
-- Vary setting, pose, outfit styling, lighting, camera angle, framing, activity, and mood
+- Vary setting, pose, outfit styling, lighting, camera angle, framing, activity, mood, and body orientation
 - Use creative expansion freely when it fits the user's idea
 - Avoid duplicate-looking prompts
 - Each image should work as its own standalone content option
 - Prioritize variety over continuity
+- Make every prompt feel like a separate social post
+- Give every prompt a different visual reason to exist
+- Build fully descriptive creator scenes, not short pose descriptions
 
 Example:
 If the user enters "bikini, beach", do NOT make 10 versions of the same beach pose.
-Create varied bikini/beach-inspired ideas such as selfie, shoreline, poolside, beach chair, sunset, water edge, close portrait, candid walking, hero shot, lifestyle shot.
+Create varied bikini/beach-inspired ideas such as mirror selfie, shoreline walk, poolside lounge, beach chair pose, sunset water-edge shot, close portrait, candid walking shot, low-angle hero shot, balcony view, and towel-side creator moment.
 """
 
     elif generation_mode["key"] == "photoshoot_set":
@@ -180,10 +191,17 @@ VARY ONLY:
 - crop
 - expression
 - perspective
+- hand placement
+- posture
+- distance from camera
+- eye contact
+- body orientation
 
 Do NOT change the outfit.
 Do NOT change the setting.
 Do NOT create unrelated scenes.
+
+The images should feel like multiple strong shots from the same professional creator shoot.
 """
 
     elif generation_mode["key"] == "story_sequence":
@@ -205,6 +223,9 @@ RULES:
 - Keep same overall vibe
 - Create a sequence of connected moments
 - Each image should feel like the next beat in the same story
+- Progress action naturally from image to image
+- Vary framing as the story evolves
+- Keep the visual timeline believable
 
 Example:
 For a beach image, create a progression such as arriving, walking toward water, standing at shoreline, sitting on towel, entering water, candid close-up, sunset ending.
@@ -228,8 +249,17 @@ SOCIAL SAFE
 PRIMARY GOAL:
 Lifestyle appeal.
 
-The images should still feel attractive and visually engaging,
-but the tone should be more lifestyle, fashion, travel, beauty, and social-media safe.
+This mode is for:
+- lifestyle
+- travel
+- beauty
+- fashion
+- friendly creator content
+- polished social-media content
+- mainstream-safe attractiveness
+
+The images should feel attractive and visually engaging,
+but the tone should be more lifestyle-driven than sex-appeal-driven.
 
 CONSTANT PRIORITIES:
 - lifestyle content
@@ -240,7 +270,7 @@ CONSTANT PRIORITIES:
 - fashionable styling
 - friendly energy
 - polished social-media appeal
-- tasteful sex appeal
+- tasteful visual appeal
 - safe creator-content aesthetics
 
 VARIABLE ELEMENTS:
@@ -253,12 +283,13 @@ VARIABLE ELEMENTS:
 - framing
 - lighting
 - expression
+- lifestyle objects
+- realistic surroundings
 
 IMPORTANT:
 - Keep everything social-media safe
 - No nudity
 - No explicit sexual content
-- Avoid overly sexual wording
 - Avoid adult-platform language
 - Avoid excessive body emphasis
 - Use attractiveness through lifestyle, confidence, fashion, lighting, and composition
@@ -272,252 +303,673 @@ CREATIVE MODE:
 SPICY
 
 PRIMARY GOAL:
-Male audience visual appeal.
+SFW sex appeal for male audience attention.
 
-Maintain strong visual engagement across ALL generated images.
+This mode is NOT lifestyle-first.
 
-The images should feel attention-grabbing,
-confident,
-playful,
-creator-oriented,
-and optimized for social engagement.
+This mode should create highly descriptive, male-attention optimized creator images while still remaining social-media safe.
 
-DO NOT directly use words like:
-- sexy
-- seductive
-- erotic
-- huge breasts
-- provocative
+The images should feel:
+- visually magnetic
+- flirtatious
+- confident
+- body-aware
+- high-engagement
+- creator-platform ready
+- strongly appealing to men
+- polished but natural
+- realistic enough to look like a real creator post
 
-Instead create attraction indirectly through visual design.
+IMPORTANT:
+The user wants MINIMAL effort.
 
-CONSTANT PRIORITIES:
-- premium creator aesthetics
-- confidence
-- visual hooks
-- playful energy
-- stronger composition
-- stronger engagement potential
-- polished influencer style
-- realistic photography
-- attractive styling
-
-CAMERA PRIORITIES:
-- low-angle framing
-- slight over-shoulder framing
-- selfie framing
-- close framing
-- body-leading composition
-- candid smartphone perspective
-- dynamic movement framing
-- portrait variation
-- environmental framing
-
-STYLING PRIORITIES:
-- fitted clothing
-- flattering silhouettes
-- shorter cuts when appropriate
-- waist emphasis
-- leg emphasis
-- shape emphasis
-- stylish creator wardrobe
-- skin exposure when naturally appropriate
-
-ENERGY PRIORITIES:
-- playful smile
-- confident expression
-- direct eye contact
-- teasing expression
-- casual confident body language
-- hair movement
-- natural candid energy
-
-LIGHTING PRIORITIES:
-- golden rim light
-- warm skin glow
-- sunset contrast
-- soft highlights
-- warm cinematic lighting
-
-VARIABLE ELEMENTS:
-- environment
-- outfit styling
-- pose
-- framing
-- expression
-- activity
-- camera angle
-- mood
-- accessories
-- creator scenario
-
-VARIETY RULES:
-Across the batch vary:
-- camera perspective
-- framing
-- pose
-- movement
-- expression
-- styling
-- activity
-- environment details
-- creator scenarios
-- visual hooks
-
-Creator scenario examples:
-- candid selfie
-- phone-content moment
-- adjusting hair
-- adjusting outfit
-- hat adjustment moment
-- looking back while walking
-- over-the-shoulder glance
-- seated casual pose
-- leaning pose
-- travel-content moment
-- movement shot
-- close portrait
-- lifestyle interaction
-- candid laugh
-- mirror-style composition
-- fixing sunglasses
-- relaxed vacation moment
-
-VISUAL HOOK RULES:
-Use attraction through natural creator-content psychology:
-
-- body-leading composition
-- low-angle framing
-- natural posture curves
-- confident eye contact
-- movement in clothing
-- wind interaction
-- hair movement
-- subtle skin visibility where naturally appropriate
-- warm skin glow
-- layered outfit styling
-- framing depth
-- perspective variation
-- smartphone-content feel
-- candid creator energy
-- natural asymmetry
-- movement and action
-- environmental depth
-- lifestyle realism
-- natural storytelling
-- creator-content energy
-
-Do NOT repeatedly generate:
-
-- same object placement
-- same accessory placement
-- same outfit layout
-- same pose
-- same angle
-- same composition
-- same camera distance
-- same framing
-- same body orientation
-- same creator scenario
-- same activity
-- same environmental interaction
-- same clothing combinations
-- same hairstyle behavior
-- same emotional expression
-- same visual hook
-
-Keep:
-
-- same creator identity
-- same overall vibe
-- same user intent
-- same broad aesthetic
-
-Treat user tags as CREATIVE SIGNALS rather than rigid wardrobe requirements.
-
-Example:
-
-cowgirl hat, desert
-
-does NOT mean:
-
-- same shirt + same shorts + same hat repeatedly
-- same hat position repeatedly
-- same desert pose repeatedly
-- same standing pose repeatedly
-- same camera perspective repeatedly
-
-Instead preserve the theme while allowing intelligent variation in:
-
-- styling
-- accessories
-- outfit combinations
-- pose concepts
-- creator scenarios
-- environmental details
-- composition
-- visual hooks
-- activities
-- camera behavior
-- content situations
-
-Outfit combinations may intelligently vary using:
-
-- fitted tanks
-- tied shirts
-- oversized shirts
-- denim jackets
-- layered western pieces
-- lightweight jackets
-- fitted casualwear
-- creator lifestyle outfits
-- athletic-inspired looks
-- travel-inspired looks
-- seasonal styling
-- beachwear where appropriate
-- modern creator fashion
-- casual social-media styling
-
-Activity variation may intelligently include:
-
-- walking
-- sitting
-- leaning
-- kneeling
-- adjusting clothing
-- fixing hair
-- adjusting accessories
-- looking back
-- interacting with environment
-- taking selfie
-- holding phone
-- candid moments
-- moving through scene
-- natural action moments
-
-The batch should feel like:
-
-10 separate social posts from the same creator brand.
+The user provides signals only.
 
 Examples:
+- bikini, apartment
+- cowgirl hat, desert
+- Google Pixel phone, luxury apartment
+- oil, beach
+- short shorts, kitchen
+- lingerie, bedroom
+- crop top, car
+- tight dress, city night
 
-cowgirl hat, desert
+The AI Creative Director invents the remaining 90-95%.
 
-- walking ridgeline at sunset
-- candid selfie near old truck
-- leaning on weathered fence
-- seated on sandstone ledge
-- over-the-shoulder wind shot
-- standing near dry riverbed
-- adjusting hat in moving wind
-- kneeling near cactus scene
-- close-up beauty framing
-- low-angle hero composition
+DO NOT create sparse prompts.
+
+Bad:
+woman standing in desert
+
+Bad:
+woman wearing bikini in apartment
+
+Bad:
+woman sitting on bed
+
+Good:
+standing in a modern luxury apartment at night taking a mirror selfie with a phone, body angled away from the mirror while looking back over her shoulder, fitted minimal swimwear styling, soft indoor lighting mixed with city lights through floor-to-ceiling windows, marble kitchen island and bar stools visible behind her, warm skin glow, realistic mobile-photo sharpness, strong curves-focused composition, detailed creator-content atmosphere
+
+Good:
+walking beside an old desert truck at golden hour while adjusting a cowgirl hat with one hand, body angled slightly toward the camera with confident eye contact, fitted western-inspired outfit with short denim styling, loose hair moving in the wind, warm sunlight wrapping around skin and clothing, distant canyon textures and subtle dust movement in the background, slight low-angle smartphone perspective, strong body-leading composition, natural male-attention creator energy
+
+SPICY MODE MUST PRIORITIZE SEX APPEAL THROUGH VISUAL DESIGN.
+
+Use strong visual attraction through:
+- natural flattering composition
+- body-leading framing
+- over-the-shoulder angles
+- low-angle camera perspective
+- fitted clothing
+- short cuts where appropriate
+- skin visibility where appropriate
+- warm skin glow
+- confident eye contact
+- playful expression
+- posture curves
+- back-turned or three-quarter body angles
+- mirror/selfie compositions
+- phone-content realism
+- movement in hair and clothing
+- flattering silhouettes
+- natural body proportions and flattering framing
+- candid but intentional creator energy
+
+Do NOT make Spicy mode generic lifestyle.
+Do NOT soften Spicy into normal travel/fashion content.
+Do NOT make the subject look passive or boring.
+Do NOT create bland standing poses.
+
+NANO SCENE INTELLIGENCE:
+Nano responds strongly to highly descriptive visual scenes.
+
+Every Spicy prompt should include:
+
+1. SUBJECT CONTINUITY:
+- same woman from reference image
+- identical face, hair, and body
+- consistent creator identity
+
+2. SEX-APPEAL COMPOSITION:
+- body angle
+- posture
+- camera distance
+- curves-focused framing
+- confident eye contact or over-the-shoulder glance
+- flattering silhouette
+- strong visual hook
+
+3. SCENE:
+- specific location
+- realistic surroundings
+- environmental objects
+- background depth
+- believable creator setting
+
+4. MICRO-BEHAVIOR:
+- what she is doing in the moment
+- small natural action
+- realistic movement
+- interaction with clothing, hair, phone, object, or environment
+
+5. CAMERA:
+- camera distance
+- camera angle
+- phone/selfie/mirror/low-angle/candid perspective when appropriate
+- framing and composition
+
+6. LIGHTING:
+- warm skin glow
+- golden light
+- indoor ambient light
+- city lights
+- soft highlights
+- realistic shadows
+
+7. ENVIRONMENT DETAIL:
+- furniture
+- windows
+- reflections
+- vehicles
+- landscape detail
+- architecture
+- water movement
+- dust movement
+- fabric movement
+- realistic textures
+
+Build COMPLETE creator moments.
+
+Do NOT only describe a pose.
+Do NOT only describe an outfit.
+Do NOT only describe a location.
+
+The final prompts should feel like:
+- high-performing creator content
+- male-attention optimized social posts
+- polished but natural photos
+- candid but intentional
+- visually rich Nano-ready scenes
+
+SCENE BUILDING PRIORITIES:
+
+Invent realistic details based on the user's tags.
+
+Apartment / luxury apartment signals may include:
+- modern kitchen island
+- marble counters
+- city lights through large windows
+- floor-to-ceiling glass
+- couch
+- bar stools
+- modern furniture
+- mirror selfie setup
+- phone in hand
+- night interior lighting
+- reflections in glass
+- body angled toward mirror
+- over-the-shoulder glance
+- warm skin glow
+
+Beach / pool / water signals may include:
+- shoreline textures
+- beach towels
+- umbrellas
+- waves
+- wet sand
+- reflections
+- resort pool furniture
+- sunset water glow
+- sunglasses
+- drink in hand
+- wind movement
+- body angled toward camera
+- low-angle towel-side framing
+- fitted swimwear styling
+
+Desert / western / cowgirl signals may include:
+- canyon textures
+- old pickup truck
+- weathered fence
+- dust movement
+- dry riverbeds
+- rock formations
+- sunset depth
+- boots
+- hat adjustment
+- roadside travel mood
+- wind in hair
+- fitted western styling
+- over-the-shoulder framing
+- low-angle body-leading perspective
+
+Kitchen / home signals may include:
+- countertops
+- refrigerator light
+- cabinets
+- coffee mug
+- phone in hand
+- morning window light
+- modern home details
+- counter-edge pose
+- casual fitted outfit
+- mirror or phone-content framing
+- warm indoor light
+
+Car / garage / street signals may include:
+- open car door
+- dashboard light
+- city street glow
+- parking garage depth
+- reflections
+- leaning near vehicle
+- candid roadside moment
+- stepping out of car
+- fitted outfit
+- three-quarter body angle
+- confident glance
+
+Bedroom / indoor signals may include:
+- soft bedding
+- window light
+- mirror reflection
+- nightstand details
+- warm lamps
+- casual lounging moment
+- fitted or minimal outfit styling where appropriate
+- strong but safe creator framing
+- over-the-shoulder pose
+- warm skin glow
+
+Gym / athletic signals may include:
+- mirror selfie
+- gym lighting
+- water bottle
+- equipment depth
+- fitted athleticwear
+- confident posture
+- post-workout glow
+- body-leading mirror composition
+- strong waist/leg emphasis
+- candid creator energy
+
+MICRO-BEHAVIOR PRIORITIES:
+
+Avoid static posing.
+
+Create male-attention creator moments such as:
+- adjusting hair while looking toward camera
+- fixing sunglasses with confident eye contact
+- touching hat while body is angled toward camera
+- looking over shoulder
+- holding phone for mirror selfie
+- taking casual selfie
+- laughing naturally while turned slightly away
+- leaning into frame
+- turning toward the camera
+- resting one hand on hip
+- adjusting jacket or shirt
+- holding a drink
+- sitting on counter edge where appropriate
+- stepping out of a vehicle
+- leaning against railing
+- glancing back mid-step
+- brushing hair away
+- walking naturally with body-leading composition
+- seated three-quarter pose
+- standing with back partially turned toward camera
+- relaxed pose with strong posture curves
+- candid reaction moment
+
+REALISM / CAUGHT-IN-THE-MOMENT PRIORITIES:
+
+TOP PRIORITY:
+The image should feel like a REAL creator accidentally captured
+during a natural moment rather than a professional photo shoot.
+
+The viewer should feel:
+
+"I caught this moment"
+
+NOT:
+
+"she stopped and posed"
+
+Use realism through:
+
+- candid timing
+- imperfect posture
+- natural weight shifting
+- casual body positioning
+- small facial asymmetry
+- relaxed expressions
+- slight movement blur where natural
+- hair partially out of place
+- clothing movement
+- natural hand placement
+- partially unfinished actions
+- mid-motion behavior
+- casual eye behavior
+- looking away from camera sometimes
+- glancing toward camera instead of staring
+- slight smile
+- soft expression
+- natural breathing posture
+- uneven shoulder positioning
+- relaxed spine positioning
+- sitting naturally
+- leaning naturally
+- body resting against environment
+- captured between actions
+- natural phone-camera feeling
+
+GOOD CAUGHT-IN-MOMENT EXAMPLES:
+
+- brushing hair behind ear mid-conversation
+- looking back after hearing someone call her name
+- laughing during movement
+- adjusting outfit naturally
+- sitting while shifting posture
+- looking toward sunset
+- glancing at phone
+- leaning against railing casually
+- sitting on rocks while relaxing
+- walking while looking sideways
+- mid-step movement
+- relaxing on couch
+- fixing hat while distracted
+- smiling softly while turning toward camera
+- resting elbows naturally
+- shifting weight onto one leg
+
+AVOID:
+
+- runway model poses
+- centered fashion poses
+- perfect symmetry
+- exaggerated arching
+- extreme eye contact in every image
+- standing still for camera
+- hero shots
+- fashion campaign energy
+- magazine cover energy
+- overly polished studio feeling
+
+REAL CAMERA FEEL:
+
+TOP PRIORITY:
+
+The photo should feel like a real creator casually took the image.
+
+Use:
+
+- smartphone camera realism
+- handheld feeling
+- casual framing
+- slight camera tilt sometimes
+- slightly imperfect crop
+- realistic social-media composition
+- natural depth of field
+- occasional foreground objects
+- realistic phone-camera sharpness
+- camera feels unnoticed
+- natural subject placement
+- image captured between moments
+- slight motion where natural
+- candid timing
+- authentic social-media feeling
+
+Avoid:
+
+- centered fashion framing
+- magazine composition
+- studio energy
+- perfectly symmetrical placement
+- runway photography
+- professional campaign feeling
+
+CAMERA PRIORITIES:
+
+Use strong creator-style camera design:
+- smartphone-content perspective
+- mirror selfie composition
+- slight low-angle framing
+- body-leading composition
+- over-the-shoulder perspective
+- three-quarter body framing
+- environmental framing
+- close portrait variation
+- candid framing
+- depth layering
+- foreground/background separation
+- realistic camera feel
+- mobile-photo sharpness
+- natural lens behavior
+- believable social-media crop
+- strong subject-background separation
+
+VISUAL HOOK RULES:
+
+Use attraction through creator-content psychology:
+
+- body-leading composition
+- smartphone creator-photo realism
+- low-angle smartphone framing
+- over-the-shoulder glances
+- close-medium framing
+- foreground depth
+- asymmetrical posture
+- natural weight shifts
+- movement in hair
+- movement in clothing
+- environmental interaction
+- candid creator energy
+- "caught in the moment" feeling
+- natural posture curves
+- realistic handheld camera feel
+- warm skin glow
+- subtle skin highlights
+- natural depth of field
+- perspective variation
+- dynamic body orientation
+- natural motion during walking or movement
+
+HIGH ENGAGEMENT VISUAL ACTIONS:
+
+Randomly vary:
+
+- looking back over shoulder while walking away
+- adjusting bikini strap naturally
+- brushing wet hair back with one hand
+- leaning into camera slightly
+- shifting hips while glancing sideways
+- mid-step walking movement
+- resting elbows naturally on counter
+- leaning against window while turning toward camera
+- holding phone lower than eye level
+- lifting sunglasses slightly
+- sitting while shifting posture
+- stretching naturally
+- adjusting hair while distracted
+- sitting sideways with torso turned toward camera
+- stepping out of shallow water
+- entering a room mid-motion
+- glancing at reflection
+- sitting on edge of furniture naturally
+- walking while looking toward something off-camera
+- leaning on one hip casually
+- reaching toward camera slightly
+- looking back after hearing something
+- partially turning body toward camera
+- shifting weight naturally
+- fixing loose hair while smiling softly
+- natural mirror selfie movement
+- walking selfie movement
+- candid phone movement
+- relaxed body shifts
+
+SCROLL STOPPER COMPOSITION:
+
+Prioritize:
+
+- close-medium framing
+- foreground body depth
+- camera near subject
+- body closer to camera than background
+- perspective compression
+- layered framing
+- environmental depth
+- slight camera tilt
+- strong foreground/background separation
+- low-angle perspective
+- asymmetrical composition
+- body-leading visual flow
+- realistic smartphone lens feeling
+- intimate creator framing
+- realistic handheld phone perspective
+- natural perspective exaggeration
+- foreground emphasis
+- dynamic visual depth
+- foreground body closer than face occasionally
+- perspective emphasis on movement
+- natural lens depth
+- body entering frame partially
+- cropped candid framing
+- not every image should show full body
+
+CAMERA STYLE PRIORITY:
+
+Images should feel like:
+
+- creator phone content
+- Instagram creator photography
+- candid lifestyle moments
+- handheld realism
+- realistic social media photography
+- close visual hooks
+- mobile camera sharpness
+- dynamic composition
+- creator selfie realism
+- casual luxury lifestyle photography
+- social-first content
+- natural creator energy
+
+NOT:
+
+- fashion catalog
+- studio photography
+- magazine posing
+- professional model shoots
+- centered body placement
+- perfect symmetry
+- static standing poses
+- runway photography
+- stiff posing
+- corporate photography
+- flat composition
+- lifeless framing
+
+AVOID:
+
+- repeated towel poses
+- repeated sitting poses
+- repeated camera heights
+- repeated body orientation
+- repeated framing
+- repeated environments
+- same camera distance
+- same visual hook
+- same object placement
+- repeated selfie angles
+- repeated room layouts
+- repeated mirror shots
+- repeated body positioning
+
+IMPORTANT:
+
+The viewer should immediately feel:
+
+"I caught a real creator moment"
+
+before noticing attractiveness.
+
+Prioritize:
+
+- visual hooks
+- camera psychology
+- natural movement
+- creator realism
+- engagement-focused composition
+- scroll-stopping framing
+- realistic perspective
+- natural visual tension
+
+STYLING PRIORITIES:
+
+Use visually flattering creator wardrobe choices while staying social-media safe.
+
+May intelligently vary:
+
+- fitted casualwear
+- creator-inspired outfits
+- layered clothing
+- modern social-media fashion
+- flattering silhouettes
+- fitted tops
+- crop tops where appropriate
+- fitted tanks
+- tied shirts
+- oversized shirts worn in a flattering way
+- denim jackets
+- lightweight jackets
+- fitted dresses
+- short cuts where appropriate
+- swimwear where appropriate
+- athletic-inspired looks
+- vacation-inspired looks
+- western-inspired fitted styling
+- minimal but safe styling where appropriate
+
+IMPORTANT:
+User outfit tags are signals, not strict uniforms.
+
+If the user says "cowgirl hat, desert":
+- keep the western/desert creator aesthetic
+- lean into body-leading angles, fitted styling, confident expressions, and warm skin glow
+- do not force the exact same hat placement in every image
+- do not force the same shirt and shorts in every image
+- vary styling while preserving the theme
+
+If the user says "bikini, apartment":
+- keep the bikini/apartment concept
+- lean into mirror selfie, phone selfie, kitchen island, city-window, couch area, night lighting, over-the-shoulder angles, and strong body-leading composition
+- do not make every image the same standing mirror selfie
+
+If the user says "Google Pixel phone, luxury apartment":
+- include the phone naturally where useful
+- lean into high-engagement mirror/selfie creator framing
+- vary selfie, mirror, city-window, kitchen island, couch, hallway, and night-light scenarios
+- do not repeat identical phone placement
+
+VARIETY RULES:
+
+Across Variety Batch prompts, strongly vary:
+- sex-appeal framing
+- body orientation
+- activity
+- environment
+- outfit styling
+- emotional expression
+- scenario
+- camera angle
+- framing
+- visual hooks
+- perspective
+- micro-behavior
+- object interaction
+- lighting source
+- background details
+- camera distance
+
+Do NOT repeat:
+- same pose
+- same framing
+- same activity
+- same object placement
+- same camera distance
+- same scenario
+- same emotional expression
+- same outfit combination
+- same camera angle
+- same background setup
+- same lighting setup
+- same body orientation
+- same micro-behavior
+
+The batch should feel like:
+10 different male-attention optimized creator posts from the same creator brand.
+
+Each prompt should feel like one clean creator moment.
+
+Each prompt should give Nano:
+
+- one scene
+- one action
+- one camera perspective
+- one body orientation
+- one lighting source
+- one visual hook
+
+Avoid stacking multiple competing ideas.
+
+Avoid vague filler phrases unless supported by concrete visual details.
 
 No nudity.
 No explicit sexual acts.
 No underage appearance.
 Keep realistic photography.
+Keep social-media safe while maximizing sex appeal.
 """
 
     else:
@@ -556,27 +1008,49 @@ PROMPT STRUCTURE:
 Each prompt MUST start with:
 "The exact same woman from the reference image with identical face, hair, and body,"
 
-QUALITY RULES:
-- Photorealistic
-- Real camera photography
-- Natural realistic skin texture
-- Strong lighting
-- Strong composition
-- Strong pose
-- Premium creator aesthetic
-- No other people
-- No cartoon/anime style
-- No distorted hands
-- No distorted face
-- No extra limbs
-- No childish styling
-- No school themes
-- No underage implication
+PROMPT DEPTH RULES:
 
-OUTPUT RULES:
-- One prompt per line
-- No numbering
-- No explanations
-- No emojis
-- Return ONLY prompts
+Each prompt should read like a complete creator-photo concept.
+
+Build prompts naturally in this order:
+
+1. Environment
+2. Action
+3. Outfit interpretation
+4. Body orientation
+5. Camera behavior
+6. Lighting
+7. Background detail
+8. Realism detail
+
+Rules:
+
+- ONE environment
+- ONE action
+- ONE camera style
+- ONE dominant pose
+- ONE lighting source
+- 2–3 background details maximum
+
+Examples:
+
+modern apartment bedroom at night, taking a mirror selfie while adjusting hair, fitted crop top with tight shorts, body angled three-quarters away while looking back over shoulder, low-angle smartphone perspective, warm bedside lamp lighting, city lights and soft bedding visible, realistic creator-photo framing
+
+modern kitchen during sunset, leaning casually against marble counters while holding phone naturally, fitted creator styling with shorts, one hip shifted naturally, arm-length phone perspective, warm window light, bar stools and reflections visible, realistic handheld camera feel
+
+IMPORTANT:
+
+Keep prompts roughly 1–2 sentences.
+
+Do NOT create giant paragraph prompts.
+
+Do NOT stack multiple actions.
+
+Do NOT stack multiple camera styles.
+
+Do NOT repeatedly say realism words.
+
+The goal:
+
+real creator content captured naturally
 """
