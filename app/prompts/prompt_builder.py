@@ -155,6 +155,12 @@ RULES:
 - Avoid duplicate-looking prompts
 - Each image should work as its own standalone content option
 - Prioritize variety over continuity
+- Prioritize close-medium creator framing over distant full-body scenery
+- The woman should usually fill most of the frame
+- Use waist-up, upper-thigh, close-medium, or intimate creator-photo crops often
+- Avoid far-away landscape-first images unless the user clearly asks for scenery
+- Background should support the subject, not dominate the image
+- Stronger images should feel close, sharp, and phone-camera intimate
 - Make every prompt feel like a separate social post
 - Give every prompt a different visual reason to exist
 - Build fully descriptive creator scenes, not short pose descriptions
@@ -1040,7 +1046,23 @@ modern kitchen during sunset, leaning casually against marble counters while hol
 
 IMPORTANT:
 
-Keep prompts roughly 1–2 sentences.
+IMPORTANT: Keep prompts roughly 1–2 sentences.
+
+MAIN VARIETY FRAMING RULE:
+For Variety Batch images, favor closer creator-photo framing:
+- close-medium framing
+- waist-up framing
+- upper-thigh framing
+- subject fills most of the image
+- face and eyes stay clear
+- outfit and pose still visible
+- background has depth but stays secondary
+
+Avoid:
+- distant full-body shots
+- tiny subject in scenery
+- wide landscape-first composition
+- too much empty background
 
 Do NOT create giant paragraph prompts.
 
