@@ -105,6 +105,23 @@ from app.ui.staging_area import (
     render_staging_sidebar_button,
 )
 
+from app.ui.premium_content_studio import (
+    render_premium_content_studio,
+)
+
+from app.config.content_paths import (
+    ensure_content_dirs,
+    get_social_photoshoot_dir,
+    get_premium_photoshoot_dir,
+)
+
+from app.ui.premium_studio_page import (
+    render_premium_studio_page,
+)
+
+from app.ui.premium_gallery import (
+    render_premium_gallery,
+)
 
 # =====================================
 # ENVIRONMENT
@@ -765,11 +782,15 @@ def render_gallery_image_grid(
     render_pagination_controls("bottom")
 
 st.set_page_config(
-    page_title="Content Studio",
+    page_title="Social Content Studio",
     layout="wide",
 )
 
-st.title("Content Studio")
+if st.session_state.get("show_premium_studio", False):
+    st.title("🔞 Premium Content Studio")
+else:
+    st.title("☀️ Social Content Studio")
+
 st.markdown("---")
 
 if st.session_state.get("save_toast_message"):
@@ -806,6 +827,9 @@ if "approved_photoshoot_results" not in st.session_state:
 if "photoshoot_upload_key" not in st.session_state:
     st.session_state["photoshoot_upload_key"] = 0
 
+if "show_premium_studio" not in st.session_state:
+    st.session_state["show_premium_studio"] = False
+
 
 # -----------------------------
 # SIDEBAR
@@ -824,12 +848,12 @@ selected_creator_name = st.sidebar.selectbox(
 
 selected_persona_key = persona_names[selected_creator_name]
 selected_output_dir = PERSONA_OUTPUT_DIRS[selected_persona_key]["output_dir"]
+ensure_content_dirs(selected_output_dir)
 
 st.sidebar.caption(
     f"Save folder: {selected_output_dir}"
 )
 
-st.sidebar.markdown("---")
 
 # =====================================
 # CREATIVE DIRECTOR
@@ -852,27 +876,15 @@ spice_level = st.sidebar.radio(
     [
         "☀️ Social Safe",
         "🔥 Spicy",
-        "🌶 Explicit (Coming Soon)"
     ],
-    index=1
+    index=1,
 )
 
 # Keep backend values unchanged
 
 if spice_level == "☀️ Social Safe":
-
     spice_level = "Social Safe"
-
 elif spice_level == "🔥 Spicy":
-
-    spice_level = "Spicy"
-
-else:
-
-    st.sidebar.warning(
-        "🌶 Explicit mode is coming later.\n\nUsing 🔥 Spicy mode for now."
-    )
-
     spice_level = "Spicy"
 
 # =====================================
@@ -933,7 +945,13 @@ show_main_generator = (
 # -----------------------------
 # MAIN INPUTS
 # -----------------------------
-if show_main_generator:
+if st.session_state.get("show_premium_studio", False):
+
+    render_premium_studio_page(
+        selected_output_dir
+    )
+
+elif show_main_generator:
 
     st.subheader("Reference Image")
 
@@ -954,7 +972,7 @@ if show_main_generator:
 
     with st.expander(
         "💡 Example Ideas",
-        expanded=False
+        expanded=False,
     ):
 
         st.markdown(
@@ -988,7 +1006,7 @@ if show_main_generator:
     if uploaded_file is None:
         st.caption("Upload a reference image before creating a shoot.")
 
-
+    
     # -----------------------------
     # GENERATE PROMPTS
     # -----------------------------
@@ -1521,6 +1539,22 @@ if st.sidebar.button(
 
 render_staging_sidebar_button()
 
+st.sidebar.markdown("---")
+
+st.sidebar.subheader(
+    "🔞 Premium"
+)
+
+if st.sidebar.button(
+    "Enter Premium Studio",
+    use_container_width=True,
+):
+    st.session_state["show_premium_studio"] = True
+    st.session_state["show_photoshoot_queue"] = False
+    st.session_state["show_gallery"] = False
+    st.session_state["show_staging_area"] = False
+    st.session_state["active_photoshoot"] = False
+    st.rerun()
 
 # ==========================
 # MAIN PAGE GALLERY VIEW
