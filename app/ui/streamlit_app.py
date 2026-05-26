@@ -71,6 +71,11 @@ from app.services.instagram_phone_publish_service import (
     copy_caption_to_phone_clipboard,
 )
 
+from app.services.x_publish_service import (
+    publish_to_x,
+)
+
+
 # =====================================
 # CORE
 # =====================================
@@ -1732,17 +1737,55 @@ if st.session_state.get(
                 )
 
         # ==========================
-        # X CAPTION
+        # X CAPTION + ACTIONS
         # ==========================
 
         st.markdown("### X Caption")
 
-        st.info(
-            st.session_state.get(
-                "publish_review_x_caption",
-                ""
-            )
+        x_caption = st.session_state.get(
+            "publish_review_x_caption",
+            ""
         )
+
+        x_caption_col, x_publish_col = st.columns(
+            [12, 1]
+        )
+
+        with x_caption_col:
+
+            st.info(
+                x_caption
+            )
+
+        with x_publish_col:
+
+            st.write("")
+
+            if st.button(
+                "🚀",
+                key="confirm_publish_x_button",
+                help="Publish to X",
+                use_container_width=True,
+            ):
+
+                try:
+
+                    publish_to_x(
+                        image_path=st.session_state["publish_review_image"],
+                        caption=x_caption,
+                    )
+
+                    st.session_state[
+                        "save_toast_message"
+                    ] = "🚀 Posted to X"
+
+                    st.rerun()
+
+                except Exception as error:
+
+                    st.error(
+                        f"X post failed: {error}"
+                    )
 
         # ==========================
         # BACK BUTTON
