@@ -63,6 +63,13 @@ from app.services.caption_service import (
     regenerate_platform_captions,
 )
 
+from app.services.instagram_publish_service import (
+    publish_to_instagram,
+)
+
+from app.services.instagram_phone_publish_service import (
+    copy_caption_to_phone_clipboard,
+)
 
 # =====================================
 # CORE
@@ -442,7 +449,13 @@ def render_gallery_image_grid(
 
     for index, image_path in enumerate(visible_images):
         with cols[index % columns]:
-            preview_path = build_gallery_preview(image_path)
+            preview_path = build_gallery_preview(
+                image_path
+            )
+
+            safe_image_key = hashlib.md5(
+                f"{page_key}_{mode}_{index}_{image_path}_{image_path.stat().st_mtime}".encode()
+            ).hexdigest()
 
             if mode == "gallery":
 
@@ -542,25 +555,35 @@ def render_gallery_image_grid(
                 action_col1, action_col2 = st.columns(2)
 
                 with action_col1:
+
                     if st.button(
                         "✍ Captions",
-                        key=f"captions_{page_key}_{image_path}",
+                        key=f"captions_{safe_image_key}",
                         use_container_width=True,
                     ):
-                        with st.spinner("Generating captions..."):
+
+                        with st.spinner(
+                            "Generating captions..."
+                        ):
+
                             captions = generate_social_captions(
                                 image_path=image_path,
                             )
 
-                        st.session_state[f"captions_{image_path}"] = captions
+                        st.session_state[
+                            f"captions_{image_path}"
+                        ] = captions
+
                         st.rerun()
 
                 with action_col2:
+
                     if st.button(
                         "↩ Gallery",
-                        key=f"return_gallery_{page_key}_{image_path}",
+                        key=f"return_gallery_{safe_image_key}",
                         use_container_width=True,
                     ):
+
                         destination = get_unique_image_path(
                             selected_output_dir,
                             image_path.name,
@@ -571,7 +594,9 @@ def render_gallery_image_grid(
                             str(destination),
                         )
 
-                        st.session_state["save_toast_message"] = (
+                        st.session_state[
+                            "save_toast_message"
+                        ] = (
                             "↩ Moved image back to Gallery"
                         )
 
@@ -582,7 +607,11 @@ def render_gallery_image_grid(
                 )
 
                 if caption_data:
-                    with st.expander("Generated Captions", expanded=True):
+
+                    with st.expander(
+                        "Generated Captions",
+                        expanded=True,
+                    ):
 
                         # ==========================
                         # INSTAGRAM
@@ -590,37 +619,43 @@ def render_gallery_image_grid(
 
                         st.markdown("### Instagram")
 
-                        for index, caption in enumerate(
-                            caption_data.get(
-                                "instagram",
-                                []
-                            )
-                        ):
+                        instagram_captions = caption_data.get(
+                            "instagram",
+                            []
+                        )
 
-                            st.text_area(
-                                "Instagram Caption",
-                                value=caption,
-                                height=80,
-                                key=(
-                                    f"ig_caption_"
-                                    f"{image_path}_"
-                                    f"{index}_"
-                                    f"{hash(caption)}"
-                                ),
+                        selected_ig_caption = ""
+
+                        if instagram_captions:
+
+                            selected_ig_caption = st.radio(
+                                "Select Instagram Caption",
+                                instagram_captions,
+                                key=f"selected_ig_caption_{safe_image_key}",
+                            )
+
+                        else:
+
+                            st.warning(
+                                "No Instagram captions available."
                             )
 
                         ig_guidance = st.text_input(
                             "Instagram guidance",
                             placeholder="Example: softer, cuter, lake weekend, less flirty...",
-                            key=f"ig_guidance_{image_path}",
+                            key=f"ig_guidance_{safe_image_key}",
                         )
 
                         if st.button(
                             "🔄 Regenerate Instagram Captions",
-                            key=f"regen_ig_{page_key}_{image_path}",
+                            key=f"regen_ig_{safe_image_key}",
                             use_container_width=True,
                         ):
-                            with st.spinner("Regenerating Instagram captions..."):
+
+                            with st.spinner(
+                                "Regenerating Instagram captions..."
+                            ):
+
                                 new_ig = regenerate_platform_captions(
                                     image_path=image_path,
                                     platform="instagram",
@@ -632,7 +667,10 @@ def render_gallery_image_grid(
                                 [],
                             )
 
-                            st.session_state[f"captions_{image_path}"] = caption_data
+                            st.session_state[
+                                f"captions_{image_path}"
+                            ] = caption_data
+
                             st.rerun()
 
                         st.markdown("---")
@@ -643,37 +681,43 @@ def render_gallery_image_grid(
 
                         st.markdown("### X")
 
-                        for index, caption in enumerate(
-                            caption_data.get(
-                                "x",
-                                []
-                            )
-                        ):
+                        x_captions = caption_data.get(
+                            "x",
+                            []
+                        )
 
-                            st.text_area(
-                                "X Caption",
-                                value=caption,
-                                height=80,
-                                key=(
-                                    f"x_caption_"
-                                    f"{image_path}_"
-                                    f"{index}_"
-                                    f"{hash(caption)}"
-                                ),
+                        selected_x_caption = ""
+
+                        if x_captions:
+
+                            selected_x_caption = st.radio(
+                                "Select X Caption",
+                                x_captions,
+                                key=f"selected_x_caption_{safe_image_key}",
+                            )
+
+                        else:
+
+                            st.warning(
+                                "No X captions available."
                             )
 
                         x_guidance = st.text_input(
                             "X guidance",
                             placeholder="Example: more flirty, more interactive, ask a question...",
-                            key=f"x_guidance_{image_path}",
+                            key=f"x_guidance_{safe_image_key}",
                         )
 
                         if st.button(
                             "🔄 Regenerate X Captions",
-                            key=f"regen_x_{page_key}_{image_path}",
+                            key=f"regen_x_{safe_image_key}",
                             use_container_width=True,
                         ):
-                            with st.spinner("Regenerating X captions..."):
+
+                            with st.spinner(
+                                "Regenerating X captions..."
+                            ):
+
                                 new_x = regenerate_platform_captions(
                                     image_path=image_path,
                                     platform="x",
@@ -685,9 +729,35 @@ def render_gallery_image_grid(
                                 [],
                             )
 
-                            st.session_state[f"captions_{image_path}"] = caption_data
+                            st.session_state[
+                                f"captions_{image_path}"
+                            ] = caption_data
+
                             st.rerun()
 
+                        st.markdown("---")
+
+                        if st.button(
+                            "➡ Continue",
+                            key=f"review_selected_captions_{safe_image_key}",
+                            use_container_width=True,
+                        ):
+
+                            st.session_state[
+                                "publish_review_image"
+                            ] = str(image_path)
+
+                            st.session_state[
+                                "publish_review_instagram_caption"
+                            ] = selected_ig_caption
+
+                            st.session_state[
+                                "publish_review_x_caption"
+                            ] = selected_x_caption
+
+                            st.rerun()
+
+    render_pagination_controls("bottom")
 
 st.set_page_config(
     page_title="Content Studio",
@@ -1572,6 +1642,133 @@ if st.session_state.get(
     "show_staging_area",
     False
 ):
+
+    if st.session_state.get(
+        "publish_review_image"
+    ):
+
+        st.subheader("📲 Confirm Publishing")
+
+        st.image(
+            st.session_state["publish_review_image"],
+            width=420,
+        )
+
+        # ==========================
+        # INSTAGRAM CAPTION + ACTIONS
+        # ==========================
+
+        st.markdown("### Instagram Caption")
+
+        ig_caption = st.session_state.get(
+            "publish_review_instagram_caption",
+            ""
+        )
+
+        ig_caption_col, ig_publish_col, ig_copy_col = st.columns(
+            [12, 1, 1]
+        )
+
+        with ig_caption_col:
+
+            st.info(
+                ig_caption
+            )
+
+        with ig_publish_col:
+
+            st.write("")
+
+            if st.button(
+                "🚀",
+                key="confirm_publish_button",
+                help="Publish to Instagram",
+                use_container_width=True,
+            ):
+
+                success = publish_to_instagram(
+                    image_path=st.session_state["publish_review_image"],
+                    caption=ig_caption,
+                )
+
+                if success:
+
+                    st.session_state[
+                        "save_toast_message"
+                    ] = "🚀 Sent to phone + Instagram opened"
+
+                    st.session_state[
+                        "publish_review_image"
+                    ] = None
+
+                    st.session_state[
+                        "publish_review_instagram_caption"
+                    ] = ""
+
+                    st.session_state[
+                        "publish_review_x_caption"
+                    ] = ""
+
+                    st.rerun()
+
+        with ig_copy_col:
+
+            st.write("")
+
+            if st.button(
+                "📋",
+                key="copy_ig_caption_to_phone",
+                help="Copy Instagram caption to phone",
+                use_container_width=True,
+            ):
+
+                copy_caption_to_phone_clipboard(
+                    ig_caption
+                )
+
+                st.toast(
+                    "📋 Instagram caption copied to phone",
+                    icon="✅",
+                )
+
+        # ==========================
+        # X CAPTION
+        # ==========================
+
+        st.markdown("### X Caption")
+
+        st.info(
+            st.session_state.get(
+                "publish_review_x_caption",
+                ""
+            )
+        )
+
+        # ==========================
+        # BACK BUTTON
+        # ==========================
+
+        if st.button(
+            "⬅ Back To Captions",
+            key="back_to_caption_selection",
+            use_container_width=True,
+        ):
+
+            st.session_state[
+                "publish_review_image"
+            ] = None
+
+            st.session_state[
+                "publish_review_instagram_caption"
+            ] = ""
+
+            st.session_state[
+                "publish_review_x_caption"
+            ] = ""
+
+            st.rerun()
+
+        st.stop()
 
     render_staging_area(
         render_gallery_image_grid
