@@ -69,28 +69,62 @@ def generate_prompts_with_grok(meta_prompt, api_key):
     payload = {
         "model": "grok-3-mini",
         "messages": [
-            {"role": "user", "content": meta_prompt}
+            {
+                "role": "user",
+                "content": meta_prompt,
+            }
         ],
         "temperature": 0.9,
     }
 
-    response = requests.post(url, headers=headers, json=payload, timeout=120)
+    response = requests.post(
+        url,
+        headers=headers,
+        json=payload,
+        timeout=120,
+    )
+
     response.raise_for_status()
 
     data = response.json()
+
     content = data["choices"][0]["message"]["content"].strip()
 
     prompts = []
 
     for line in content.split("\n"):
+
         line = line.strip()
 
         if not line:
             continue
 
-        line = re.sub(r"^\d+[\.\)]\s*", "", line)
+        # Remove numbering
+        line = re.sub(
+            r"^\d+[\.\)]\s*",
+            "",
+            line,
+        )
 
+        # Skip bullets only
         if line in {"-", "*", "•"}:
+            continue
+
+        lowered = line.lower()
+
+        # Skip intro/setup text from Grok
+        if (
+            lowered.startswith("here are")
+            or lowered.startswith("these prompts")
+            or lowered.startswith("each prompt")
+            or lowered.startswith("each one")
+            or lowered.startswith("all prompts")
+            or lowered.startswith("below are")
+        ):
+            continue
+
+        # Skip very short junk lines
+        if len(line) < 20:
             continue
 
         prompts.append(line)

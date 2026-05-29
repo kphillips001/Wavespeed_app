@@ -72,7 +72,9 @@ def render_premium_studio_page(selected_output_dir):
 
     st.markdown("---")
 
-    render_premium_content_studio()
+    render_premium_content_studio(
+        selected_output_dir=selected_output_dir,
+    )
 
     st.markdown("---")
 
