@@ -74,7 +74,8 @@ def generate_prompts_with_grok(meta_prompt, api_key):
                 "content": meta_prompt,
             }
         ],
-        "temperature": 0.9,
+        "temperature": 1.3,
+        "top_p": 0.95,
     }
 
     response = requests.post(

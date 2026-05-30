@@ -969,32 +969,6 @@ st.sidebar.caption(
     f"Images: {prompt_count}"
 )
 
-# =====================================
-# MODEL RENDERERS
-# =====================================
-
-st.sidebar.header("Renderer")
-
-send_to_nano_pro = st.sidebar.button(
-    "🍌 Nano Banana Pro",
-    use_container_width=True,
-)
-
-st.sidebar.button(
-    "🌱 Seedream 4.5",
-    use_container_width=True,
-    disabled=True,
-)
-
-st.sidebar.button(
-    "⚡ Seedream 5 Lite",
-    use_container_width=True,
-    disabled=True,
-)
-
-st.sidebar.caption(
-    "More render models coming soon"
-)
 
 # -----------------------------
 # MAIN GENERATOR VISIBILITY
@@ -1083,8 +1057,17 @@ elif show_main_generator:
     # -----------------------------
     # GENERATE BUTTON
     # -----------------------------
-    generate_clicked = st.button(
-        "✨ Create Shoot",
+    get_prompts_button_label = (
+        "🔄 Get Fresh New Prompts"
+        if (
+            "generated_prompts" in st.session_state
+            and st.session_state["generated_prompts"]
+        )
+        else "✨ Get Prompts"
+    )
+
+    get_prompts_clicked = st.button(
+        get_prompts_button_label,
         use_container_width=True,
         disabled=uploaded_file is None,
     )
@@ -1096,7 +1079,7 @@ elif show_main_generator:
     # -----------------------------
     # GENERATE PROMPTS
     # -----------------------------
-    if generate_clicked:
+    if get_prompts_clicked:
 
         if not user_tags.strip():
             st.error("Please enter some creative tags.")
@@ -1123,14 +1106,50 @@ elif show_main_generator:
             spice_level=spice_level,
         )
 
+        refresh_nonce = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+
+        meta_prompt += f"""
+
+        IMPORTANT FRESHNESS RULE:
+
+        This is a regeneration request.
+
+        Create a completely new prompt batch.
+
+        Do not repeat:
+        - previous poses
+        - previous camera angles
+        - previous framing
+        - previous body positions
+        - previous scene compositions
+        - previous wording
+
+        Keep the same creative tags, but make the ideas feel fresh.
+
+        Fresh request ID: {refresh_nonce}
+        """
+
         prompts = generate_prompts_with_grok(
             meta_prompt,
             grok_key,
         )
 
+        # Clear old prompt text widgets so Streamlit does not reuse stale values
+        for key in list(st.session_state.keys()):
+            if key.startswith("text_prompt_"):
+                del st.session_state[key]
+
+        # Give each prompt batch a unique ID
+        if "prompt_batch_id" not in st.session_state:
+            st.session_state["prompt_batch_id"] = 0
+
+        st.session_state["prompt_batch_id"] += 1
+
+        prompt_batch_id = st.session_state["prompt_batch_id"]
+
         st.session_state["generated_prompts"] = [
             {
-                "id": f"prompt_{i}",
+                "id": f"prompt_{prompt_batch_id}_{i}",
                 "text": prompt,
             }
             for i, prompt in enumerate(prompts, start=1)
@@ -1146,6 +1165,8 @@ elif show_main_generator:
         st.session_state["review_mode"] = "review"
 
         st.success("Prompt batch generated.")
+
+        st.rerun()
 
 
     # -----------------------------
@@ -1193,40 +1214,34 @@ elif show_main_generator:
             f"{len(st.session_state['generated_prompts'])} prompt(s) currently selected for future image generation."
         )
 
-        st.write(
-            f"**Mode:** Variety Batch"
-        )
-
-        st.write(
-            f"**Platform:** {st.session_state.get('last_platform_mode', platform_mode)}"
-        )
-
-        st.write(
-            f"**Spice Level:** {st.session_state.get('last_spice_level', spice_level)}"
-        )
-
-        st.write(
-            f"**Prompt Count:** {len(st.session_state['generated_prompts'])}"
-        )
-
         st.markdown("### User Tags")
         st.code(st.session_state.get("last_user_tags", user_tags))
 
 
     # -----------------------------
-    # SEND TO NANO BANANA PRO
+    # CREATE SHOOT WITH NANO BANANA PRO
     # -----------------------------
-    if send_to_nano_pro:
+    create_shoot_clicked = st.button(
+        "🍌 Create Shoot",
+        use_container_width=True,
+        disabled=(
+            "generated_prompts" not in st.session_state
+            or not st.session_state["generated_prompts"]
+            or uploaded_file is None
+        ),
+    )
+
+    if create_shoot_clicked:
 
         if (
             "generated_prompts" not in st.session_state
             or not st.session_state["generated_prompts"]
         ):
-            st.error("Generate prompts first before sending to Nano Banana Pro.")
+            st.error("Get prompts first before creating a shoot.")
             st.stop()
 
         if not uploaded_file:
-            st.error("Please upload a reference image before sending to Nano Banana Pro.")
+            st.error("Please upload a reference image before creating a shoot.")
             st.stop()
 
         if not wavespeed_key:
@@ -1241,7 +1256,7 @@ elif show_main_generator:
         total_prompts = len(st.session_state["generated_prompts"])
 
         st.warning(
-            f"Sending {total_prompts} prompt(s) to {selected_model['name']}. This will use WaveSpeed credits."
+            f"Creating {total_prompts} image(s) with {selected_model['name']}. This will use WaveSpeed credits."
         )
 
         with tempfile.NamedTemporaryFile(

@@ -505,6 +505,11 @@ Apartment / luxury apartment signals may include:
 - warm skin glow
 
 Beach / pool / water signals may include:
+Examples are inspiration only.
+
+Do NOT repeatedly select the first few examples.
+
+Actively rotate through different concepts, activities, and camera perspectives.
 - shoreline textures
 - beach towels
 - umbrellas
@@ -1039,6 +1044,16 @@ Every prompt MUST preserve:
 PROMPT STRUCTURE:
 Each prompt MUST start with:
 "The exact same woman from the reference image with identical face, hair, and body,"
+
+Avoid reusing the same action, pose, or body orientation from previous generations.
+
+If the user regenerates prompts, deliberately create new concepts rather than refining previous concepts.
+
+Do not default to:
+- looking over shoulder
+- adjusting clothing straps
+- shoreline standing poses
+- walking along the beach
 
 PROMPT DEPTH RULES:
 
