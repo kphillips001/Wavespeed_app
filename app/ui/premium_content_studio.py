@@ -309,6 +309,7 @@ def render_premium_content_studio(
             )
 
         st.session_state["premium_enhanced_tags_value"] = enhanced_tags
+        st.session_state["premium_enhanced_tags_input"] = enhanced_tags
         st.session_state["premium_tags_have_been_enhanced"] = True
         st.session_state["premium_selected_tag_source"] = "Enhanced Tags"
 
@@ -326,6 +327,7 @@ def render_premium_content_studio(
             )
 
         st.session_state["premium_surprise_tags_value"] = surprise_tags
+        st.session_state["premium_surprise_tags_input"] = surprise_tags
         st.session_state["premium_tags_have_been_surprised"] = True
         st.session_state["premium_selected_tag_source"] = "Surprise Me Tags"
 
