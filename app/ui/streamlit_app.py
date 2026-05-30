@@ -75,6 +75,13 @@ from app.services.x_publish_service import (
     publish_to_x,
 )
 
+from app.services.social_lucky_service import generate_lucky_social_tags
+
+from app.services.batch_state_service import (
+    save_current_batch_state,
+    load_current_batch_state,
+    clear_current_batch_state,
+)
 
 # =====================================
 # CORE
@@ -831,6 +838,7 @@ if "show_premium_studio" not in st.session_state:
     st.session_state["show_premium_studio"] = False
 
 
+
 # -----------------------------
 # SIDEBAR
 # -----------------------------
@@ -854,6 +862,62 @@ st.sidebar.caption(
     f"Save folder: {selected_output_dir}"
 )
 
+# =====================================
+# RESTORE SAVED BATCH
+# =====================================
+
+if "batch_restored" not in st.session_state:
+
+    saved_batch = load_current_batch_state()
+
+    if saved_batch:
+
+        st.session_state["generated_images"] = [
+            {
+                "id": f"image_{i}",
+                "url": image_path,
+                "prompt": prompt_text,
+                "status": "completed",
+            }
+            for i, (image_path, prompt_text)
+            in enumerate(
+                zip(
+                    saved_batch.get(
+                        "generated_image_paths",
+                        []
+                    ),
+                    saved_batch.get(
+                        "generated_prompts",
+                        []
+                    ),
+                ),
+                start=1,
+            )
+        ]
+
+        st.session_state["generated_prompts"] = [
+            {
+                "id": f"prompt_{i}",
+                "text": prompt_text,
+            }
+            for i, prompt_text
+            in enumerate(
+                saved_batch.get(
+                    "generated_prompts",
+                    []
+                ),
+                start=1,
+            )
+        ]
+
+        st.session_state["last_user_tags"] = saved_batch.get(
+            "creative_tags",
+            "",
+        )
+
+        st.session_state["generation_complete"] = True
+
+    st.session_state["batch_restored"] = True
 
 # =====================================
 # CREATIVE DIRECTOR
@@ -970,28 +1034,50 @@ elif show_main_generator:
         "Enter ideas, not prompts. The Creative Director will build the shoot."
     )
 
-    with st.expander(
-        "💡 Example Ideas",
-        expanded=False,
-    ):
+    # --------------------------------
+    # SESSION STATE
+    # --------------------------------
 
-        st.markdown(
-            """
-            - bikini
-            - Google Pixel phone, luxury apartment
-            - oil, beach
-            - short shorts, kitchen
-            """
+    if "creative_tags_input_box" not in st.session_state:
+        st.session_state["creative_tags_input_box"] = ""
+
+    # --------------------------------
+    # I FEEL LUCKY HANDLER
+    # --------------------------------
+
+    def fill_lucky_tags():
+        lucky_tags = generate_lucky_social_tags(
+            prompt_count=prompt_count
         )
 
-    if "creative_tags_key" not in st.session_state:
-        st.session_state["creative_tags_key"] = 0
+        if isinstance(lucky_tags, list):
+            lucky_tags = ", ".join(
+                str(tag).strip()
+                for tag in lucky_tags
+                if str(tag).strip()
+            )
+
+        st.session_state["creative_tags_input_box"] = str(lucky_tags).strip()
+
+    # --------------------------------
+    # CREATIVE TAGS BOX
+    # --------------------------------
 
     user_tags = st.text_area(
-        label="",
-        key=f"creative_tags_{st.session_state['creative_tags_key']}",
+        label="Creative Tags",
+        key="creative_tags_input_box",
         placeholder="Type your creative tags here...",
         label_visibility="collapsed",
+    )
+
+    # --------------------------------
+    # I FEEL LUCKY
+    # --------------------------------
+
+    st.button(
+        "🎲 I Feel Lucky",
+        use_container_width=True,
+        on_click=fill_lucky_tags,
     )
 
     # -----------------------------
@@ -1245,6 +1331,28 @@ elif show_main_generator:
                     }
                 )
 
+                save_current_batch_state(
+                    creator_name=selected_creator_name,
+                    creative_tags=st.session_state.get(
+                        "last_user_tags",
+                        "",
+                    ),
+                    generated_prompts=[
+                        item["text"]
+                        for item in st.session_state.get(
+                            "generated_prompts",
+                            []
+                        )
+                    ],
+                    generated_image_paths=[
+                        item["url"]
+                        for item in st.session_state.get(
+                            "generated_images",
+                            []
+                        )
+                    ],
+                )
+
                 with live_gallery.container():
 
                     st.markdown("---")
@@ -1408,6 +1516,28 @@ if (
                 f"🗑️ Discarded {len(discard_ids)} image(s)"
             )
 
+            save_current_batch_state(
+                creator_name=selected_creator_name,
+                creative_tags=st.session_state.get(
+                    "last_user_tags",
+                    "",
+                ),
+                generated_prompts=[
+                    item["text"]
+                    for item in st.session_state.get(
+                        "generated_prompts",
+                        []
+                    )
+                ],
+                generated_image_paths=[
+                    item["url"]
+                    for item in st.session_state.get(
+                        "generated_images",
+                        []
+                    )
+                ],
+            )
+
             st.rerun()
 
         else:
@@ -1467,6 +1597,7 @@ if (
 
             st.session_state["save_toast_time"] = time.time()
 
+            clear_current_batch_state()
             st.session_state["generated_images"] = []
             st.session_state["failed_images"] = []
             st.session_state["generated_prompts"] = []
@@ -1476,8 +1607,7 @@ if (
             st.session_state["generation_status"] = ""
 
             st.session_state["uploader_key"] += 1
-            st.session_state["creative_tags_key"] += 1
-
+            
             st.rerun()
 
 # -----------------------------

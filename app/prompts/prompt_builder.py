@@ -129,6 +129,32 @@ The batch should feel like:
 
 User creative tags:
 {user_request}
+
+MULTI-LINE USER TAG RULE:
+
+If the user creative tags contain multiple lines,
+each line is a separate image concept.
+
+Treat each line independently.
+
+Do NOT merge multiple lines together.
+Do NOT blend multiple lines into the same prompt.
+Do NOT treat all lines as one giant tag pool.
+
+Generate exactly one prompt per line when multiple lines are provided.
+
+Prompt 1 should be based on Line 1.
+Prompt 2 should be based on Line 2.
+Prompt 3 should be based on Line 3.
+Continue this pattern until {prompt_count} prompts are created.
+
+If fewer lines than {prompt_count} are provided,
+create additional prompts by intelligently expanding the same creator brand and vibe.
+
+If more lines than {prompt_count} are provided,
+use only the first {prompt_count} lines.
+
+Each final prompt should primarily follow its corresponding line's concept while expanding it into a complete Nano-ready image prompt.
 """
 
     if generation_mode["key"] == "variety_batch":
