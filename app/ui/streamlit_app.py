@@ -11,12 +11,12 @@ sys.path.append(
 # STANDARD LIBRARY
 # =====================================
 
-import hashlib
 import json
 import os
 import shutil
 import tempfile
 import time
+
 from datetime import datetime
 
 
@@ -28,12 +28,17 @@ import requests
 import streamlit as st
 
 from dotenv import load_dotenv
-from PIL import Image, ImageFilter
 
 
 # =====================================
 # APP CONFIG
 # =====================================
+
+from app.config.content_paths import (
+    ensure_content_dirs,
+    get_premium_photoshoot_dir,
+    get_social_photoshoot_dir,
+)
 
 from app.config.settings import (
     MODELS,
@@ -58,34 +63,32 @@ from app.prompts.prompt_builder import (
 # SERVICES
 # =====================================
 
-from app.services.caption_service import (
-    generate_social_captions,
-    regenerate_platform_captions,
-)
-
-from app.services.instagram_publish_service import (
-    publish_to_instagram,
+from app.services.batch_state_service import (
+    clear_current_batch_state,
+    load_current_batch_state,
+    save_current_batch_state,
 )
 
 from app.services.instagram_phone_publish_service import (
     copy_caption_to_phone_clipboard,
 )
 
-from app.services.x_publish_service import (
-    publish_to_x,
-)
-
-from app.services.social_lucky_service import generate_lucky_social_tags
-
-from app.services.batch_state_service import (
-    save_current_batch_state,
-    load_current_batch_state,
-    clear_current_batch_state,
+from app.services.instagram_publish_service import (
+    publish_to_instagram,
 )
 
 from app.services.session_reset_service import (
     reset_social_studio_session,
 )
+
+from app.services.social_lucky_service import (
+    generate_lucky_social_tags,
+)
+
+from app.services.x_publish_service import (
+    publish_to_x,
+)
+
 
 # =====================================
 # CORE
@@ -101,38 +104,31 @@ from main import (
 
 
 # =====================================
-# UI HELPERS
+# UI
 # =====================================
 
 from app.ui.image_file_utils import (
-    IMAGE_EXTENSIONS,
     get_image_files,
     get_unique_image_path,
 )
 
-from app.ui.staging_area import (
-    move_image_to_staged,
-    render_staging_area,
-    render_staging_sidebar_button,
-)
-
-from app.ui.premium_content_studio import (
-    render_premium_content_studio,
-)
-
-from app.config.content_paths import (
-    ensure_content_dirs,
-    get_social_photoshoot_dir,
-    get_premium_photoshoot_dir,
+from app.ui.premium_gallery import (
+    render_premium_gallery,
 )
 
 from app.ui.premium_studio_page import (
     render_premium_studio_page,
 )
 
-from app.ui.premium_gallery import (
-    render_premium_gallery,
+from app.ui.social_gallery import (
+    render_gallery_image_grid,
 )
+
+from app.ui.staging_area import (
+    render_staging_area,
+    render_staging_sidebar_button,
+)
+
 
 # =====================================
 # ENVIRONMENT
@@ -321,7 +317,6 @@ Specific shot request:
 # GALLERY HELPERS
 # =============================
 
-IMAGES_PER_PAGE = 24
 
 def get_photoshoot_folders(photoshoot_root):
     root = Path(photoshoot_root)
@@ -342,455 +337,7 @@ def get_photoshoot_folders(photoshoot_root):
     )
 
 
-def render_gallery_image_grid(
-    image_paths,
-    columns=3,
-    page_key="gallery",
-    mode="gallery",
-):
-    if not image_paths:
-        st.warning("No images found.")
-        return
 
-    def build_gallery_preview(image_path):
-        preview_dir = Path(selected_output_dir) / "_gallery_preview_cache"
-
-        preview_dir.mkdir(
-            parents=True,
-            exist_ok=True,
-        )
-
-        cache_name = hashlib.md5(
-            f"{image_path}_{image_path.stat().st_mtime}".encode()
-        ).hexdigest()
-
-        preview_path = preview_dir / f"{cache_name}.jpg"
-
-        if preview_path.exists():
-            return preview_path
-
-        image = Image.open(image_path).convert("RGB")
-
-        max_width = 900
-        max_height = 1200
-
-        image.thumbnail(
-            (max_width, max_height)
-        )
-
-        image.save(
-            preview_path,
-            quality=95,
-        )
-
-        return preview_path
-
-    st.markdown(
-        """
-        <style>
-        [data-testid="stImage"] {
-            background: transparent !important;
-            border: none !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            border-radius: 0 !important;
-            overflow: hidden !important;
-            box-shadow: none !important;
-        }
-
-        [data-testid="stImage"] img {
-            width: 100% !important;
-            display: block !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            border: none !important;
-            border-radius: 12px !important;
-            box-shadow: none !important;
-        }
-
-        div[data-testid="column"] {
-            margin-bottom: 12px !important;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    total_images = len(image_paths)
-
-    total_pages = max(
-        1,
-        (total_images + IMAGES_PER_PAGE - 1) // IMAGES_PER_PAGE,
-    )
-
-    current_page_key = f"{page_key}_page"
-
-    if current_page_key not in st.session_state:
-        st.session_state[current_page_key] = 1
-
-    current_page = st.session_state[current_page_key]
-
-    if current_page > total_pages:
-        current_page = total_pages
-        st.session_state[current_page_key] = current_page
-
-    def render_pagination_controls(location):
-        nav_col1, nav_col2, nav_col3 = st.columns([6, 1, 1])
-
-        with nav_col1:
-            st.caption(
-                f"Page {current_page} of {total_pages} • {total_images} image(s)"
-            )
-
-        with nav_col2:
-            if st.button(
-                "← Prev",
-                key=f"{page_key}_prev_{location}",
-                use_container_width=True,
-                disabled=current_page <= 1,
-            ):
-                st.session_state[current_page_key] = current_page - 1
-                st.rerun()
-
-        with nav_col3:
-            if st.button(
-                "Next →",
-                key=f"{page_key}_next_{location}",
-                use_container_width=True,
-                disabled=current_page >= total_pages,
-            ):
-                st.session_state[current_page_key] = current_page + 1
-                st.rerun()
-
-    render_pagination_controls("top")
-
-    start_index = (current_page - 1) * IMAGES_PER_PAGE
-    end_index = start_index + IMAGES_PER_PAGE
-
-    visible_images = image_paths[start_index:end_index]
-
-    photoshoot_queue_dir = Path(
-        r"D:\Ava Blackthorne\Ready\Wavespeed\Photoshoot"
-    )
-
-    photoshoot_queue_dir.mkdir(
-        parents=True,
-        exist_ok=True,
-    )
-
-    cols = st.columns(columns)
-
-    for index, image_path in enumerate(visible_images):
-        with cols[index % columns]:
-            preview_path = build_gallery_preview(
-                image_path
-            )
-
-            safe_image_key = hashlib.md5(
-                f"{page_key}_{mode}_{index}_{image_path}_{image_path.stat().st_mtime}".encode()
-            ).hexdigest()
-
-            if mode == "gallery":
-
-                st.image(
-                    str(preview_path),
-                    use_container_width=True,
-                )
-
-                action_col1, action_col2 = st.columns(2)
-
-                with action_col1:
-                    if st.button(
-                        "📸 Queue",
-                        key=f"gallery_queue_{page_key}_{image_path}",
-                        use_container_width=True,
-                    ):
-                        queue_path = get_unique_image_path(
-                            photoshoot_queue_dir,
-                            image_path.name,
-                        )
-
-                        shutil.move(
-                            str(image_path),
-                            str(queue_path),
-                        )
-
-                        st.session_state["save_toast_message"] = (
-                            "📸 Added image to Photoshoot Queue"
-                        )
-
-                        st.rerun()
-
-                with action_col2:
-                    if st.button(
-                        "🗑 Delete",
-                        key=f"gallery_delete_{page_key}_{image_path}",
-                        use_container_width=True,
-                    ):
-                        junk_path = (
-                            Path(selected_output_dir)
-                            / "Junk-Outdated"
-                        )
-
-                        junk_path.mkdir(
-                            parents=True,
-                            exist_ok=True,
-                        )
-
-                        destination = get_unique_image_path(
-                            junk_path,
-                            Path(image_path).name,
-                        )
-
-                        shutil.move(
-                            str(image_path),
-                            str(destination),
-                        )
-
-                        st.session_state["save_toast_message"] = (
-                            "🗑 Moved image to Junk"
-                        )
-
-                        st.rerun()
-
-                if st.button(
-                    "✨ Prepare",
-                    key=f"prepare_stage_{page_key}_{image_path}",
-                    use_container_width=True,
-                ):
-                    success = move_image_to_staged(
-                        image_path
-                    )
-
-                    if success:
-                        st.session_state["save_toast_message"] = (
-                            "✨ Moved image to Staged"
-                        )
-
-                    else:
-                        st.session_state["save_toast_message"] = (
-                            "⚠️ Staged area is full"
-                        )
-
-                    st.rerun()
-
-            elif mode == "staged":
-
-                st.image(
-                    str(preview_path),
-                    use_container_width=True,
-                )
-
-                st.caption(
-                    "Ready for captions, reels, and publishing."
-                )
-
-                action_col1, action_col2 = st.columns(2)
-
-                with action_col1:
-
-                    if st.button(
-                        "✍ Captions",
-                        key=f"captions_{safe_image_key}",
-                        use_container_width=True,
-                    ):
-
-                        with st.spinner(
-                            "Generating captions..."
-                        ):
-
-                            captions = generate_social_captions(
-                                image_path=image_path,
-                            )
-
-                        st.session_state[
-                            f"captions_{image_path}"
-                        ] = captions
-
-                        st.rerun()
-
-                with action_col2:
-
-                    if st.button(
-                        "↩ Gallery",
-                        key=f"return_gallery_{safe_image_key}",
-                        use_container_width=True,
-                    ):
-
-                        destination = get_unique_image_path(
-                            selected_output_dir,
-                            image_path.name,
-                        )
-
-                        shutil.move(
-                            str(image_path),
-                            str(destination),
-                        )
-
-                        st.session_state[
-                            "save_toast_message"
-                        ] = (
-                            "↩ Moved image back to Gallery"
-                        )
-
-                        st.rerun()
-
-                caption_data = st.session_state.get(
-                    f"captions_{image_path}"
-                )
-
-                if caption_data:
-
-                    with st.expander(
-                        "Generated Captions",
-                        expanded=True,
-                    ):
-
-                        # ==========================
-                        # INSTAGRAM
-                        # ==========================
-
-                        st.markdown("### Instagram")
-
-                        instagram_captions = caption_data.get(
-                            "instagram",
-                            []
-                        )
-
-                        selected_ig_caption = ""
-
-                        if instagram_captions:
-
-                            selected_ig_caption = st.radio(
-                                "Select Instagram Caption",
-                                instagram_captions,
-                                key=f"selected_ig_caption_{safe_image_key}",
-                            )
-
-                        else:
-
-                            st.warning(
-                                "No Instagram captions available."
-                            )
-
-                        ig_guidance = st.text_input(
-                            "Instagram guidance",
-                            placeholder="Example: softer, cuter, lake weekend, less flirty...",
-                            key=f"ig_guidance_{safe_image_key}",
-                        )
-
-                        if st.button(
-                            "🔄 Regenerate Instagram Captions",
-                            key=f"regen_ig_{safe_image_key}",
-                            use_container_width=True,
-                        ):
-
-                            with st.spinner(
-                                "Regenerating Instagram captions..."
-                            ):
-
-                                new_ig = regenerate_platform_captions(
-                                    image_path=image_path,
-                                    platform="instagram",
-                                    extra_instructions=ig_guidance,
-                                )
-
-                            caption_data["instagram"] = new_ig.get(
-                                "instagram",
-                                [],
-                            )
-
-                            st.session_state[
-                                f"captions_{image_path}"
-                            ] = caption_data
-
-                            st.rerun()
-
-                        st.markdown("---")
-
-                        # ==========================
-                        # X
-                        # ==========================
-
-                        st.markdown("### X")
-
-                        x_captions = caption_data.get(
-                            "x",
-                            []
-                        )
-
-                        selected_x_caption = ""
-
-                        if x_captions:
-
-                            selected_x_caption = st.radio(
-                                "Select X Caption",
-                                x_captions,
-                                key=f"selected_x_caption_{safe_image_key}",
-                            )
-
-                        else:
-
-                            st.warning(
-                                "No X captions available."
-                            )
-
-                        x_guidance = st.text_input(
-                            "X guidance",
-                            placeholder="Example: more flirty, more interactive, ask a question...",
-                            key=f"x_guidance_{safe_image_key}",
-                        )
-
-                        if st.button(
-                            "🔄 Regenerate X Captions",
-                            key=f"regen_x_{safe_image_key}",
-                            use_container_width=True,
-                        ):
-
-                            with st.spinner(
-                                "Regenerating X captions..."
-                            ):
-
-                                new_x = regenerate_platform_captions(
-                                    image_path=image_path,
-                                    platform="x",
-                                    extra_instructions=x_guidance,
-                                )
-
-                            caption_data["x"] = new_x.get(
-                                "x",
-                                [],
-                            )
-
-                            st.session_state[
-                                f"captions_{image_path}"
-                            ] = caption_data
-
-                            st.rerun()
-
-                        st.markdown("---")
-
-                        if st.button(
-                            "➡ Continue",
-                            key=f"review_selected_captions_{safe_image_key}",
-                            use_container_width=True,
-                        ):
-
-                            st.session_state[
-                                "publish_review_image"
-                            ] = str(image_path)
-
-                            st.session_state[
-                                "publish_review_instagram_caption"
-                            ] = selected_ig_caption
-
-                            st.session_state[
-                                "publish_review_x_caption"
-                            ] = selected_x_caption
-
-                            st.rerun()
-
-    render_pagination_controls("bottom")
 
 st.set_page_config(
     page_title="Social Content Studio",
@@ -1726,6 +1273,7 @@ if st.session_state.get("show_gallery", False):
 
         render_gallery_image_grid(
             root_images,
+            selected_output_dir=selected_output_dir,
             columns=3,
             page_key="all_content_gallery",
             mode="gallery",
@@ -1760,9 +1308,12 @@ if st.session_state.get("show_gallery", False):
 
             render_gallery_image_grid(
                 photoshoot_images,
+                selected_output_dir=selected_output_dir,
                 columns=3,
                 page_key=f"photoshoot_gallery_{selected_folder_path.name}",
+                mode="gallery",
             )
+
         else:
             st.markdown("### Photoshoot Albums")
             st.caption(f"Showing folders inside: {photoshoot_root}")
@@ -2003,7 +1554,16 @@ if st.session_state.get(
         st.stop()
 
     render_staging_area(
-        render_gallery_image_grid
+        lambda image_paths,
+        columns=3,
+        page_key="staging",
+        mode="staged": render_gallery_image_grid(
+            image_paths,
+            selected_output_dir=selected_output_dir,
+            columns=columns,
+            page_key=page_key,
+            mode=mode,
+        )
     )
 
     st.stop()
