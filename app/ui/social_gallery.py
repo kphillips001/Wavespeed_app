@@ -316,13 +316,15 @@ def render_gallery_image_grid(
                     "Ready for captions, reels, and publishing."
                 )
 
-                action_col1, action_col2 = st.columns(2)
+                action_col1, action_col2, action_col3, action_col4, action_col5 = st.columns(
+                    [1, 1, 1, 1, 1]
+                )
 
                 with action_col1:
-
                     if st.button(
-                        "✍ Captions",
+                        "✍️",
                         key=f"captions_{safe_image_key}",
+                        help="Generate Captions",
                         use_container_width=True,
                     ):
 
@@ -341,10 +343,72 @@ def render_gallery_image_grid(
                         st.rerun()
 
                 with action_col2:
-
                     if st.button(
-                        "↩ Gallery",
+                        "📸",
+                        key=f"staging_queue_{safe_image_key}",
+                        help="Add to Photoshoot Queue",
+                        use_container_width=True,
+                    ):
+                        queue_path = get_unique_image_path(
+                            photoshoot_queue_dir,
+                            image_path.name,
+                        )
+
+                        shutil.move(
+                            str(image_path),
+                            str(queue_path),
+                        )
+
+                        st.session_state["save_toast_message"] = (
+                            "📸 Added image to Photoshoot Queue"
+                        )
+
+                        st.rerun()
+
+                with action_col3:
+                    if st.button(
+                        "🎨",
+                        key=f"staging_edit_{safe_image_key}",
+                        help="Open Edit Studio",
+                        use_container_width=True,
+                    ):
+                        sent_to_edit_dir = selected_output_dir / "Sent-to-Edit"
+
+                        sent_to_edit_dir.mkdir(
+                            parents=True,
+                            exist_ok=True,
+                        )
+
+                        sent_to_edit_path = get_unique_image_path(
+                            sent_to_edit_dir,
+                            image_path.name,
+                        )
+
+                        shutil.move(
+                            str(image_path),
+                            str(sent_to_edit_path),
+                        )
+
+                        st.session_state["multi_edit_source_image"] = str(sent_to_edit_path)
+                        st.session_state["multi_edit_origin"] = "staged"
+                        st.session_state["edit_mode"] = None
+                        st.session_state["show_multi_edit_studio"] = True
+                        st.session_state["show_gallery"] = False
+                        st.session_state["show_photoshoot_queue"] = False
+                        st.session_state["show_staging_area"] = False
+                        st.session_state["active_photoshoot"] = False
+
+                        st.session_state["save_toast_message"] = (
+                            "🎨 Moved staged image to Edit Studio"
+                        )
+
+                        st.rerun()
+
+                with action_col4:
+                    if st.button(
+                        "↩️",
                         key=f"return_gallery_{safe_image_key}",
+                        help="Move Back to Gallery",
                         use_container_width=True,
                     ):
 
@@ -362,6 +426,36 @@ def render_gallery_image_grid(
                             "save_toast_message"
                         ] = (
                             "↩ Moved image back to Gallery"
+                        )
+
+                        st.rerun()
+
+                with action_col5:
+                    if st.button(
+                        "🗑️",
+                        key=f"staging_delete_{safe_image_key}",
+                        help="Move to Junk",
+                        use_container_width=True,
+                    ):
+                        junk_path = selected_output_dir / "Junk-Outdated"
+
+                        junk_path.mkdir(
+                            parents=True,
+                            exist_ok=True,
+                        )
+
+                        destination = get_unique_image_path(
+                            junk_path,
+                            image_path.name,
+                        )
+
+                        shutil.move(
+                            str(image_path),
+                            str(destination),
+                        )
+
+                        st.session_state["save_toast_message"] = (
+                            "🗑 Moved image to Junk"
                         )
 
                         st.rerun()
