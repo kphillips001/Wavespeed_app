@@ -233,7 +233,24 @@ def render_gallery_image_grid(
                         help="Open in Multi Edit Studio",
                         use_container_width=True,
                     ):
-                        st.session_state["multi_edit_source_image"] = str(image_path)
+                        sent_to_edit_dir = selected_output_dir / "Sent-to-Edit"
+
+                        sent_to_edit_dir.mkdir(
+                            parents=True,
+                            exist_ok=True,
+                        )
+
+                        sent_to_edit_path = get_unique_image_path(
+                            sent_to_edit_dir,
+                            image_path.name,
+                        )
+
+                        shutil.move(
+                            str(image_path),
+                            str(sent_to_edit_path),
+                        )
+
+                        st.session_state["multi_edit_source_image"] = str(sent_to_edit_path)
                         st.session_state["multi_edit_origin"] = "social"
                         st.session_state["show_multi_edit_studio"] = True
                         st.session_state["show_gallery"] = False
@@ -242,7 +259,7 @@ def render_gallery_image_grid(
                         st.session_state["active_photoshoot"] = False
 
                         st.session_state["save_toast_message"] = (
-                            "🎨 Sent image to Multi Edit Studio"
+                            "🎨 Moved image to Multi Edit Studio"
                         )
 
                         st.rerun()

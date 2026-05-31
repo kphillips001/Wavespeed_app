@@ -129,6 +129,10 @@ from app.ui.staging_area import (
     render_staging_sidebar_button,
 )
 
+from app.ui.multi_edit_studio import (
+    render_multi_edit_studio,
+)
+
 
 # =====================================
 # ENVIRONMENT
@@ -534,7 +538,11 @@ show_main_generator = (
 # -----------------------------
 # MAIN INPUTS
 # -----------------------------
-if st.session_state.get("show_premium_studio", False):
+if st.session_state.get("show_multi_edit_studio", False):
+
+    render_multi_edit_studio()
+
+elif st.session_state.get("show_premium_studio", False):
 
     render_premium_studio_page(
         selected_output_dir
