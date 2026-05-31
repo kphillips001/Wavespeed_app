@@ -83,6 +83,10 @@ from app.services.batch_state_service import (
     clear_current_batch_state,
 )
 
+from app.services.session_reset_service import (
+    reset_social_studio_session,
+)
+
 # =====================================
 # CORE
 # =====================================
@@ -1075,7 +1079,6 @@ elif show_main_generator:
     if uploaded_file is None:
         st.caption("Upload a reference image before creating a shoot.")
 
-    
     # -----------------------------
     # GENERATE PROMPTS
     # -----------------------------
@@ -1231,6 +1234,25 @@ elif show_main_generator:
         ),
     )
 
+    has_resettable_state = (
+        bool(st.session_state.get("generated_prompts"))
+        or bool(st.session_state.get("generated_images"))
+        or bool(st.session_state.get("failed_images"))
+        or bool(st.session_state.get("generation_status"))
+        or bool(st.session_state.get("generation_complete"))
+        or bool(st.session_state.get("last_user_tags"))
+    )
+
+    if has_resettable_state:
+        reset_clicked = st.button(
+            "🔴 Reset Session",
+            use_container_width=True,
+        )
+
+        if reset_clicked:
+            reset_social_studio_session()
+            st.rerun()
+
     if create_shoot_clicked:
 
         if (
@@ -1263,7 +1285,6 @@ elif show_main_generator:
             delete=False,
             suffix=Path(uploaded_file.name).suffix
         ) as temp_file:
-
             temp_file.write(uploaded_file.getvalue())
             temp_image_path = temp_file.name
 
@@ -1271,17 +1292,13 @@ elif show_main_generator:
         progress_bar = st.progress(0)
         live_gallery = st.empty()
 
-        with st.spinner(
-            "Uploading reference image to ImgBB..."
-        ):
+        with st.spinner("Uploading reference image to ImgBB..."):
             image_url = upload_to_imgbb(
                 temp_image_path,
                 imgbb_key
             )
 
-            verify_image_url(
-                image_url
-            )
+            verify_image_url(image_url)
 
         st.session_state["generated_images"] = []
         st.session_state["failed_images"] = []
@@ -1298,13 +1315,8 @@ elif show_main_generator:
 
             prompt_text = prompt_item["text"]
 
-            completed_count = len(
-                st.session_state["generated_images"]
-            )
-
-            failed_count = len(
-                st.session_state["failed_images"]
-            )
+            completed_count = len(st.session_state["generated_images"])
+            failed_count = len(st.session_state["failed_images"])
 
             remaining_count = (
                 total_prompts
@@ -1319,12 +1331,9 @@ elif show_main_generator:
                 f"⏳ {remaining_count} remaining"
             )
 
-            status_box.info(
-                st.session_state["generation_status"]
-            )
+            status_box.info(st.session_state["generation_status"])
 
             try:
-
                 request_id = submit_wavespeed_task(
                     prompt=prompt_text,
                     image_url=image_url,
@@ -1348,10 +1357,7 @@ elif show_main_generator:
 
                 save_current_batch_state(
                     creator_name=selected_creator_name,
-                    creative_tags=st.session_state.get(
-                        "last_user_tags",
-                        "",
-                    ),
+                    creative_tags=st.session_state.get("last_user_tags", ""),
                     generated_prompts=[
                         item["text"]
                         for item in st.session_state.get(
@@ -1369,29 +1375,23 @@ elif show_main_generator:
                 )
 
                 with live_gallery.container():
-
                     st.markdown("---")
                     st.subheader("Live Generated Images")
 
                     current_images = list(
-                        reversed(
-                            st.session_state["generated_images"]
-                        )
+                        reversed(st.session_state["generated_images"])
                     )
 
                     cols = st.columns(2)
 
                     for i, image_item in enumerate(current_images):
-
                         with cols[i % 2]:
-
                             st.image(
                                 image_item["url"],
                                 use_container_width=True,
                             )
 
             except Exception as error:
-
                 st.session_state["failed_images"].append(
                     {
                         "id": f"image_{index}",
@@ -1401,13 +1401,8 @@ elif show_main_generator:
                     }
                 )
 
-            completed_count = len(
-                st.session_state["generated_images"]
-            )
-
-            failed_count = len(
-                st.session_state["failed_images"]
-            )
+            completed_count = len(st.session_state["generated_images"])
+            failed_count = len(st.session_state["failed_images"])
 
             remaining_count = (
                 total_prompts
@@ -1422,21 +1417,12 @@ elif show_main_generator:
                 f"⏳ {remaining_count} remaining"
             )
 
-            status_box.info(
-                st.session_state["generation_status"]
-            )
+            status_box.info(st.session_state["generation_status"])
 
-            progress_bar.progress(
-                index / total_prompts
-            )
+            progress_bar.progress(index / total_prompts)
 
-        completed_count = len(
-            st.session_state["generated_images"]
-        )
-
-        failed_count = len(
-            st.session_state["failed_images"]
-        )
+        completed_count = len(st.session_state["generated_images"])
+        failed_count = len(st.session_state["failed_images"])
 
         st.session_state["generation_complete"] = True
 
@@ -1447,15 +1433,13 @@ elif show_main_generator:
         )
 
         if failed_count == 0:
-            status_box.success(
-                st.session_state["generation_status"]
-            )
+            status_box.success(st.session_state["generation_status"])
         else:
-            status_box.warning(
-                st.session_state["generation_status"]
-            )
+            status_box.warning(st.session_state["generation_status"])
 
         live_gallery.empty()
+
+        st.rerun()
 
 # -----------------------------
 # GENERATED IMAGE GALLERY
