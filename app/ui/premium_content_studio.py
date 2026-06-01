@@ -234,6 +234,11 @@ def render_premium_content_studio(
         key=f"premium_uploaded_file_{st.session_state['premium_uploader_key']}",
     )
 
+    active_premium_uploaded_file = (
+        premium_uploaded_file
+        or st.session_state.get("premium_uploaded_file")
+    )
+
     st.subheader("Creative Tags")
 
     st.caption(
@@ -468,7 +473,7 @@ def render_premium_content_studio(
         "🔥 Generate Premium Images",
         use_container_width=True,
         disabled=(
-            premium_uploaded_file is None
+            active_premium_uploaded_file is None
             or not st.session_state["premium_prompts"]
         ),
     )
@@ -541,7 +546,7 @@ def render_premium_content_studio(
 
             render_results = generate_premium_images(
                 premium_prompts=st.session_state["premium_prompts"],
-                uploaded_file=premium_uploaded_file,
+                uploaded_file=active_premium_uploaded_file,
                 selected_output_dir=selected_output_dir,
                 progress_callback=update_premium_progress,
             )
@@ -576,3 +581,11 @@ def render_premium_content_studio(
     render_premium_generated_image_gallery(
         selected_output_dir=selected_output_dir,
     )
+
+    if (
+        st.session_state.get("premium_generation_complete", False)
+        and st.session_state.get("premium_generated_images")
+    ):
+        return True
+
+    return False

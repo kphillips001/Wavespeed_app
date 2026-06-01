@@ -72,9 +72,12 @@ def render_premium_studio_page(selected_output_dir):
 
     st.markdown("---")
 
-    render_premium_content_studio(
+    premium_has_active_results = render_premium_content_studio(
         selected_output_dir=selected_output_dir,
     )
+
+    if premium_has_active_results:
+        return
 
     st.markdown("---")
 

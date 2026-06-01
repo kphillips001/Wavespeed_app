@@ -8,8 +8,7 @@ from PIL import Image
 from app.config.content_paths import (
     get_premium_gallery_dir,
     get_premium_photoshoot_dir,
-    get_premium_export_dir,
-)
+    )
 
 from app.ui.image_file_utils import (
     get_image_files,
@@ -23,12 +22,10 @@ IMAGES_PER_PAGE = 24
 def render_premium_gallery(selected_output_dir):
     premium_gallery_dir = get_premium_gallery_dir(selected_output_dir)
     premium_photoshoot_dir = get_premium_photoshoot_dir(selected_output_dir)
-    premium_export_dir = get_premium_export_dir(selected_output_dir)
-
+    
     premium_gallery_dir.mkdir(parents=True, exist_ok=True)
     premium_photoshoot_dir.mkdir(parents=True, exist_ok=True)
-    premium_export_dir.mkdir(parents=True, exist_ok=True)
-
+    
     st.markdown("---")
     st.subheader("🖼 Premium Gallery")
 
@@ -172,12 +169,24 @@ def render_premium_gallery(selected_output_dir):
                 use_container_width=True,
             )
 
-            action_col1, action_col2 = st.columns(2)
+            action_col1, action_col2, action_col3, action_col4, action_col5 = st.columns(
+                [1, 1, 1, 1, 1]
+            )
 
             with action_col1:
                 if st.button(
-                    "📸 Queue",
+                    "✨",
+                    key=f"premium_gallery_prepare_{safe_image_key}",
+                    help="Prepare for Premium Publishing",
+                    use_container_width=True,
+                ):
+                    st.toast("✨ Premium publishing prep coming soon!")
+
+            with action_col2:
+                if st.button(
+                    "📸",
                     key=f"premium_gallery_queue_{safe_image_key}",
+                    help="Add to Premium Photoshoot Queue",
                     use_container_width=True,
                 ):
                     destination = get_unique_image_path(
@@ -196,13 +205,32 @@ def render_premium_gallery(selected_output_dir):
 
                     st.rerun()
 
-            with action_col2:
+            with action_col3:
                 if st.button(
-                    "🗑 Delete",
-                    key=f"premium_gallery_delete_{safe_image_key}",
+                    "🎨",
+                    key=f"premium_gallery_multi_edit_{safe_image_key}",
+                    help="Open in Multi Edit Studio",
                     use_container_width=True,
                 ):
-                    junk_dir = premium_gallery_dir / "Junk-Outdated"
+                    st.toast("🎨 Premium Multi Edit coming soon!")
+
+            with action_col4:
+                if st.button(
+                    "🎬",
+                    key=f"premium_gallery_video_{safe_image_key}",
+                    help="Video Studio Coming Soon",
+                    use_container_width=True,
+                ):
+                    st.toast("🎬 Video Studio coming soon!")
+
+            with action_col5:
+                if st.button(
+                    "🗑️",
+                    key=f"premium_gallery_delete_{safe_image_key}",
+                    help="Move to Junk",
+                    use_container_width=True,
+                ):
+                    junk_dir = Path(selected_output_dir) / "Junk-Outdated"
 
                     junk_dir.mkdir(
                         parents=True,
@@ -220,30 +248,10 @@ def render_premium_gallery(selected_output_dir):
                     )
 
                     st.session_state["save_toast_message"] = (
-                        "🗑 Moved premium image to Junk"
+                        "🗑️ Moved premium image to Junk"
                     )
 
                     st.rerun()
-
-            if st.button(
-                "📤 Export",
-                key=f"premium_gallery_export_{safe_image_key}",
-                use_container_width=True,
-            ):
-                destination = get_unique_image_path(
-                    premium_export_dir,
-                    image_path.name,
-                )
-
-                shutil.copy2(
-                    str(image_path),
-                    str(destination),
-                )
-
-                st.session_state["save_toast_message"] = (
-                    "📤 Copied premium image to Export_To_FanvueChatbot"
-                )
-
-                st.rerun()
+         
 
     render_pagination_controls("bottom")

@@ -68,12 +68,179 @@ Body Preservation Rules:
 - avoid unrealistic proportions
 - avoid artificial body distortion
 
+Bust Consistency Rules:
+- preserve the exact bust size shown in the reference image
+- maintain full natural D-cup breast proportions
+- maintain the exact breast size visible in the reference image
+- preserve full breast volume and projection
+- preserve natural D-cup fullness across every prompt
+- maintain visible breast projection
+- maintain full upper breast volume
+- maintain full lower breast volume
+- maintain rounded natural breast shape
+- maintain natural cleavage when visible
+- maintain consistent nipple size and placement when topless or nude
+- maintain naturally visible nipples when topless or nude
+- nipples should remain unobstructed when topless
+- nipples should be clearly visible whenever topless is requested
+- do not reduce breast volume
+- do not make the subject smaller-busted than the reference image
+- do not flatten the chest
+- do not make the breasts look like a small B cup
+- keep bust proportions consistent across every prompt
+
 USER CREATIVE TAGS:
 {creative_tags}
+
+IMPORTANT:
+
+Treat user tags as a theme.
+
+Do NOT copy the enhanced tags literally.
+
+Extract the core idea and create multiple scene concepts.
+
+Example:
+
+topless, pool, night
+
+does NOT mean:
+
+10 prompts beside the same pool.
+
+It means:
+
+10 completely different premium moments
+that all happen to include a pool at night.
+
+Generate scene variety first.
 
 MANDATORY TAG ENFORCEMENT:
 
 User Creative Tags are mandatory.
+
+CRITICAL NUDITY / CLOTHING ENFORCEMENT:
+
+ABSOLUTE PRIORITY RULE:
+
+User creative tags override every other instruction in this document.
+
+Be creative only with:
+- pose
+- camera angle
+- framing
+- expression
+- lighting
+- environment details
+- mood
+- micro-action
+
+Do NOT be creative with required user tags.
+
+If the user requests topless, bare breasts, nude, naked, booty shorts, bikini, lake, couch, bedroom, shower, or any specific wardrobe/location, preserve those exact requirements in every prompt.
+
+If the user requests topless:
+
+EVERY prompt must include:
+
+TOPLESS,
+bare breasts clearly visible,
+natural nipples visible,
+no bra,
+no lingerie top,
+no shirt,
+no crop top,
+no dress,
+no robe,
+no swimsuit,
+no bikini top,
+no upper-body clothing.
+
+Topless enforcement rules:
+
+- bare breasts must remain visible
+- nipples should remain naturally visible
+- hair should not completely cover the chest
+- arms should not completely cover the breasts
+- framing should clearly show the topless state
+- avoid poses that hide the chest from the camera
+- avoid camera angles that obscure the breasts
+- avoid furniture, blankets, pillows, or objects covering the breasts
+- the viewer should immediately recognize that the subject is topless
+- topless visibility must be preserved in every prompt
+
+If the user requests:
+
+- nude
+- nudity
+- naked
+- completely nude
+- fully nude
+
+EVERY prompt must include:
+
+COMPLETELY NUDE,
+bare breasts visible,
+natural nipples visible,
+no clothing.
+
+Nudity enforcement rules:
+
+- no bras
+- no lingerie
+- no lingerie tops
+- no shirts
+- no crop tops
+- no robes
+- no bikinis
+- no swimsuits
+- no dresses
+- no towels covering the body
+
+The subject must remain completely nude.
+
+Avoid:
+
+- implied nudity
+- hidden nudity
+- obscured nudity
+- covered breasts
+- cropped-away nudity
+
+The viewer should immediately recognize the subject is completely nude.
+
+If the user requests booty shorts:
+EVERY prompt must include:
+wearing ONLY booty shorts on the lower body.
+
+Never substitute requested clothing or nudity with lingerie, dresses, slips, bodysuits, swimsuits, robes, or implied nudity.
+
+If the user tags include topless, every prompt must explicitly say:
+TOPLESS, bare breasts fully visible, no bra, no lingerie top, no shirt, no crop top, no dress, no robe, no upper-body clothing.
+
+If the user tags include nude, nudity, or naked, every prompt must explicitly say:
+FULLY NUDE, no clothing, bare breasts visible, bare body visible.
+
+If the user tags include booty shorts, every prompt must explicitly say:
+wearing ONLY booty shorts on the lower body.
+
+Never replace user-requested topless, nude, or bare breasts with:
+- lingerie
+- black satin lingerie
+- dresses
+- slips
+- bodysuits
+- swimsuits
+- bras
+- crop tops
+- shirts
+- robes
+- covered breasts
+- implied nudity
+
+Never add upper-body clothing when the user requested topless or bare breasts.
+
+Never add dresses, lingerie, slips, or bodysuits unless the user explicitly requested them.
 
 Do NOT reinterpret, soften, replace, weaken, or remove user tags.
 
@@ -519,6 +686,7 @@ Reduce:
 - distant full-body standing shots
 - stiff symmetrical poses
 
+
 BODY PRESENTATION:
 
 When nudity is requested, favor:
@@ -526,6 +694,43 @@ When nudity is requested, favor:
 - visible breasts
 - natural breast presentation
 - bare breasts visible when requested
+- maintain the exact bust proportions shown in the reference image
+- maintain full natural D-cup breast volume
+- maintain substantial upper-breast fullness
+- maintain substantial lower-breast fullness
+- maintain visible breast projection
+- maintain noticeable breast projection
+- maintain full upper breast fullness
+- maintain full lower breast fullness
+- maintain the same breast volume visible in the reference image
+- maintain the same breast projection visible in the reference image
+- maintain the same chest-to-waist proportions visible in the reference image
+- maintain full natural breast mass
+- maintain rounded full breast contours
+- maintain natural upper breast fullness
+- preserve bust size from the reference image
+- preserve breast shape from the reference image
+- maintain rounded natural breast shape
+- maintain consistent breast width and spacing
+- maintain natural cleavage when visible
+- nipples should remain naturally visible when topless
+- nipples should not be obscured by hair
+- nipples should not be obscured by arms
+- nipples should not be obscured by furniture
+- maintain natural nipple visibility consistent with the reference image
+- maintain consistent nipple placement
+
+- maintain the exact overall body proportions shown in the reference image
+- maintain the same overall body shape
+- maintain the same overall body weight and physique
+- maintain the same waist-to-hip ratio
+- maintain the same hip width
+- maintain the same thigh thickness
+- maintain the same leg proportions
+- maintain the same shoulder width
+- maintain the same feminine hourglass silhouette
+- maintain consistent body proportions across every generated image
+
 - flattering upper-body angles
 - body-leading composition
 - feminine curves
@@ -538,6 +743,28 @@ When nudity is requested, favor:
 Maintain realism.
 
 Avoid:
+- reducing breast volume
+- reducing breast projection
+- reducing breast fullness
+- flattening the chest
+- making the subject smaller-busted than the reference image
+- small B-cup interpretations
+- minimizing breast volume
+- athletic chest reinterpretations
+- flatter chest interpretations
+- reducing bust size from the reference image
+- inconsistent breast size across prompts
+
+- changing body weight
+- changing waist size
+- changing hip size
+- changing thigh thickness
+- changing shoulder width
+- changing overall body proportions
+- changing chest-to-waist proportions
+- changing bust-to-waist proportions
+- altering the recognizable silhouette of the reference image
+
 - exaggerated anatomy
 - cartoon proportions
 - distorted bodies
@@ -652,36 +879,186 @@ B) showing more of her face, expression, body language, and eye contact
 
 always choose B.
 
-INTIMACY OVERRIDES VARIETY:
+CREATIVE VARIETY OVERRIDES REPETITION:
 
-When generating prompt variation:
+Premium Studio is an IDEA GENERATOR.
 
-DO NOT prioritize creating entirely different scenes.
+This is NOT a photoshoot sequence.
 
-Instead prioritize creating different intimate moments within the same environment.
+This is NOT a continuity series.
+
+This is NOT a scene progression.
+
+Every prompt should feel like a completely different premium image concept.
+
+The user's tags define REQUIRED ELEMENTS and a BROAD THEME.
+
+The user's tags do NOT require every prompt to stay in the exact same room, corner, furniture setup, or micro-location.
+
+Extract:
+
+- wardrobe requirements
+- nudity requirements
+- broad setting theme
+- atmosphere requirements
+
+Then generate completely different visual scenarios.
+
+If the user gives a broad setting like:
+- indoors
+- outdoors
+- hotel lounge
+- apartment
+- bedroom
+- cabin
+- pool
+- porch
+- city
+- beach
+- lake
+
+you may expand into nearby or related settings that fit the same theme.
 
 Example:
 
-Pool environment:
-- sitting on pool edge
-- reclining on pool edge
-- seated in shallow water
-- leaning on pool coping
-- resting arms on pool edge
-- floating close to camera
-- seated on submerged steps
-- lounging beside water
-- looking toward camera from water level
-- relaxing with legs in pool
+hotel lounge can expand into:
+- hotel lounge sofa
+- penthouse suite
+- private hotel balcony
+- upscale hotel bedroom
+- luxury bathroom mirror
+- cocktail bar corner
+- high-rise window seat
+- hotel hallway doorway
+- private terrace
+- hotel room couch
 
-Do NOT force:
-- standing poses
-- distant environmental shots
-- architecture showcases
-- travel photography angles
+Do NOT repeat the same exact location across the batch.
 
-The goal is multiple intimate moments,
-not multiple locations.
+Example:
+
+fireplace, crop top, booty shorts
+
+Required elements:
+
+- fireplace
+- crop top
+- booty shorts
+
+DO NOT repeat the same fireplace scene.
+
+Create different interactions around the fireplace.
+
+Example concepts:
+
+- sitting on hearth
+- lying on rug
+- sitting in chair beside fireplace
+- leaning on mantel
+- curled up on couch
+- standing in doorway
+- sitting on floor
+- stretching beside fireplace
+- window seat near fireplace
+- reading beside fireplace
+
+The required elements remain.
+
+The scene must change.
+
+Example:
+
+If user enters:
+
+nude, pool, night
+
+Valid prompt concepts include:
+
+- standing beside pool
+- floating in water
+- submerged pool steps
+- outdoor shower
+- poolside lounge chair
+- hot tub
+- cabana seating
+- pool bar
+- fire pit area
+- balcony overlooking pool
+- poolside daybed
+- pool staircase
+- indoor pool
+- infinity edge
+- private resort room overlooking pool
+
+Do NOT generate ten images in the same location.
+
+The environment should change naturally while preserving the user theme.
+
+Example:
+
+If user enters:
+
+topless, porch, night
+
+Valid concepts include:
+
+- leaning on railing
+- sitting in rocking chair
+- sitting on porch swing
+- standing in doorway
+- sitting on porch steps
+- relaxing on outdoor couch
+- sitting on bench
+- wrapped in blanket on porch chair
+- leaning against porch column
+- standing near screen door
+
+Do NOT repeatedly use:
+
+- same railing
+- same chair
+- same corner
+- same furniture
+- same camera position
+
+Every prompt must begin from a different visual concept.
+
+MANDATORY VARIETY:
+
+Across the batch intentionally vary:
+
+- environment location
+- furniture
+- architecture element
+- interaction point
+- activity
+- pose
+- body orientation
+- camera angle
+- framing
+- perspective
+- expression
+- storytelling moment
+
+Changing only:
+
+- smile
+- eye direction
+- hand placement
+
+does NOT count as variation.
+
+Every prompt should feel like a different premium image that could have been posted on a different day.
+
+AVOID:
+
+- same location repeated
+- same furniture repeated
+- same pose repeated
+- same framing repeated
+- same environmental interaction repeated
+
+Generate genuine variety.
 
 CAMERA DIRECTION:
 
@@ -878,6 +1255,49 @@ Use realism through:
 
 REAL CAMERA FEEL:
 
+PHONE CAMERA REALISM PRIORITY:
+
+The image should feel like she personally took this for a subscriber.
+
+Favor:
+
+- smartphone camera realism
+- handheld phone-camera perspective
+- casual creator content
+- candid private moments
+- imperfect framing
+- slight camera tilt
+- natural body positioning
+- realistic apartment lighting
+- lamp lighting
+- bedside lighting
+- couch lighting
+- evening ambient lighting
+- lived-in environments
+- authentic creator energy
+- "sent this just for you" feeling
+
+The viewer should feel:
+
+"she took this for me"
+
+NOT:
+
+"a professional photographer took this"
+
+Avoid:
+
+- luxury boudoir photography
+- magazine photography
+- studio lighting
+- professional glamour photography
+- perfect commercial composition
+- perfect editorial posing
+- luxury hotel marketing photography
+- real-estate photography energy
+- overly polished luxury interiors
+- fashion campaign styling
+
 The photo should feel like a real creator casually took the image.
 
 Use:
@@ -907,14 +1327,214 @@ Avoid:
 
 {shot_type_context}
 
+SCENE DIVERSITY RULE:
+
+The user's tags define REQUIRED ELEMENTS.
+
+The user's tags do NOT define a single scene.
+
+Extract:
+
+- wardrobe requirements
+- nudity requirements
+- location requirements
+- atmosphere requirements
+
+Then generate completely different visual scenarios.
+
+Example:
+
+fireplace, crop top, booty shorts
+
+Required elements:
+
+- fireplace
+- crop top
+- booty shorts
+
+DO NOT repeat the same fireplace scene.
+
+Create different interactions around the fireplace.
+
+Example concepts:
+
+- sitting on hearth
+- lying on rug
+- sitting in chair beside fireplace
+- leaning on mantel
+- curled up on couch
+- standing in doorway
+- sitting on floor
+- stretching beside fireplace
+- window seat near fireplace
+- reading beside fireplace
+
+The required elements remain.
+
+The scene must change.
+
+LOCATION DIVERSITY RULE:
+
+Every prompt must use a different primary setting or micro-location.
+
+Do NOT keep every prompt in the same exact place.
+
+If the user gives one broad location, expand it into related nearby locations.
+
+Examples:
+
+hotel lounge:
+- velvet chaise in hotel lounge
+- private hotel suite
+- window seat overlooking city lights
+- hotel balcony doorway
+- upscale cocktail bar corner
+- marble bathroom mirror
+- hotel bedroom couch
+- penthouse sitting area
+- hallway doorway
+- terrace seating
+
+indoors:
+- couch
+- bedroom
+- kitchen island
+- bathroom mirror
+- hallway doorway
+- window seat
+- fireplace rug
+- balcony doorway
+- bed edge
+- apartment floor
+
+outdoors:
+- porch
+- dock
+- field
+- garden path
+- cabin steps
+- lakeside rocks
+- fence line
+- balcony
+- trail overlook
+- backyard chair
+
+pool:
+- pool edge
+- submerged steps
+- cabana
+- poolside daybed
+- outdoor shower
+- hot tub
+- balcony overlooking pool
+- pool bar
+- lounge chair
+- private courtyard
+
+Generate multiple unique interactions with the broad theme.
+
+Do not repeatedly place the subject in the same spot.
+
+Every prompt must involve a different:
+
+- interaction point
+- activity
+- furniture element
+- architectural element
+- perspective
+- storytelling moment
+
+Changing only pose does not count.
+
+Changing only expression does not count.
+
+Changing only camera angle does not count.
+
+Each prompt should feel like a different day and a different moment.
+
+CRITICAL RULE:
+
+No primary scene concept may be reused.
+
+If one prompt uses:
+
+- fireplace hearth
+
+another prompt may not use:
+
+- fireplace hearth
+
+If one prompt uses:
+
+- couch beside fireplace
+
+another prompt may not use:
+
+- couch beside fireplace
+
+Each prompt must begin from a different visual concept.
+
 PROMPT REQUIREMENTS:
+COMPOSITION DIVERSITY:
+
+Intentionally vary composition across the batch.
+
+Include a mix of:
+
+- chest-up portraits
+- waist-up portraits
+- upper-thigh framing
+- seated full-body compositions
+- reclining compositions
+- leaning compositions
+- kneeling compositions
+- over-the-shoulder perspectives
+- side-profile perspectives
+- three-quarter body angles
+- low-angle perspectives
+- eye-level perspectives
+- slightly elevated perspectives
+
+Do not default to:
+- seated smiling at camera
+- leaning toward camera
+- direct eye contact in every prompt
+
+Some prompts should feel:
+- playful
+- teasing
+- relaxed
+- dreamy
+- mischievous
+- candid
+- contemplative
+- caught-in-the-moment
+
+Not every prompt should use:
+- soft smile
+- direct eye contact
+- inviting gaze
+
+Vary emotional presentation naturally.
+
 - Return exactly {prompt_count} prompts
 - Number the prompts
 - Each prompt must be substantially different
+- Every prompt must begin from a different visual concept
+- Every prompt must use a different primary setting or micro-location
+- Do not reuse the same room, furniture piece, corner, seating position, or environmental interaction twice
+- If the user provides a broad location theme, expand into related nearby settings
 - Use different shot types throughout the batch
 - Use different camera angles throughout the batch
 - Use different environments throughout the batch
 - Use different poses throughout the batch
+- Use different body orientations throughout the batch
+- Use different furniture interactions throughout the batch
+- Use different storytelling moments throughout the batch
+- Use different emotional energy throughout the batch
+- Use different facial expressions throughout the batch
+- Use different viewer-connection styles throughout the batch
+- Mix direct eye contact, over-the-shoulder glances, playful looks, soft smiles, teasing expressions, candid moments, and relaxed expressions
 - Preserve the same woman in every image
 - Write complete WAN 2.7 image-edit prompts
 - Each prompt should feel close, personal, realistic, and creator-captured
@@ -923,24 +1543,96 @@ PROMPT REQUIREMENTS:
 - Each prompt should include body language or a natural micro-behavior
 - Each prompt should include camera distance or framing
 - Each prompt should include lighting
+- Vary sentence structure throughout the batch
+- Do not begin prompts with the same phrase repeatedly
+- Prompt openings should vary naturally throughout the batch
+- Writing style should vary naturally across prompts
+- Avoid template-like repetition
+- Lighting descriptions should vary substantially across prompts
+- Avoid repeating identical lighting language throughout the batch
 
-- At least 90% of prompts should use:
-  - seated poses
-  - reclining poses
-  - lounging poses
-  - resting poses
-  - bed poses
-  - couch poses
-  - chair poses
-  - fireplace poses
-  - floor-rug poses
-  - kitchen-island poses
-  - countertop poses
-  - window-seat poses
-  - intimate close-up poses
-  - personal lifestyle moments
+Examples of acceptable variation:
 
-- No more than 10% of prompts should use standing poses
+hotel lounge:
+- chaise lounge
+- leather chair
+- sectional sofa
+- cocktail table
+- window seat
+- balcony doorway
+- penthouse sitting area
+- hotel suite couch
+- marble bathroom mirror
+- terrace seating
+
+indoors:
+- couch
+- bed edge
+- kitchen island
+- fireplace chair
+- window ledge
+- hallway doorway
+- bathroom mirror
+- balcony doorway
+- reading chair
+- floor cushion
+
+outdoors:
+- garden path
+- porch swing
+- lakeside rocks
+- dock edge
+- cabin steps
+- fence line
+- trail overlook
+- backyard chair
+- tree stump
+- field grass
+
+Changing only:
+- expression
+- smile
+- hand placement
+- eye direction
+
+does NOT count as scene variety.
+
+Each prompt should feel like it was captured on a different day in a different moment while preserving the user's required tags.
+
+If the user requests topless:
+
+EVERY prompt must clearly depict:
+
+- topless presentation
+- visible bare breasts
+- naturally visible nipples
+- no bra
+- no shirt
+- no crop top
+- no upper-body clothing
+
+Toplessness must remain obvious in every image.
+
+However:
+
+- Vary the wording naturally throughout the batch
+- Do not begin every prompt with the same topless phrase
+- Do not repeat identical topless wording in every prompt
+- Integrate toplessness naturally into the scene description
+- Some prompts may mention toplessness near the beginning
+- Some prompts may mention toplessness in the pose description
+- Some prompts may mention toplessness in the body-language description
+
+Examples of acceptable variation:
+
+- topless with bare breasts visible
+- bare-chested with natural breasts visible
+- topless presentation with visible natural nipples
+- upper body uncovered with bare breasts visible
+- relaxed topless pose with natural breast visibility
+
+The topless state must remain unmistakable, but the wording should not become repetitive.
+
 
 - Favor:
   - close-up framing
@@ -999,19 +1691,6 @@ PROMPT REQUIREMENTS:
 
   Always choose B.
 
-- Favor prompts involving:
-  - lying on a bed
-  - sitting on a bed
-  - lounging across a couch
-  - reclining in a chair
-  - relaxing beside a fireplace
-  - seated on a kitchen island
-  - leaning across a countertop
-  - curled beneath blankets
-  - seated beside a window
-  - resting on a fur rug
-  - intimate bedroom moments
-  - candid evening moments
 
 - Avoid repeatedly generating:
   - standing beside windows
@@ -1026,6 +1705,13 @@ PROMPT REQUIREMENTS:
 - If nudity is requested in the user tags, include tasteful nudity clearly in every prompt
 
 - If topless or nude content is requested, include natural nudity directly in every prompt
+- If topless, bare breasts, nude, naked, or completely nude content is requested, preserve the reference image's full natural D-cup bust size in every prompt
+- Maintain full breast projection
+- Maintain rounded natural breast contours
+- Do not reduce bust volume
+- Do not reinterpret the chest as smaller than the reference image
+- If topless, bare breasts, or nude content is requested, do not reduce breast volume or make the breasts appear smaller than the reference image
+- If topless, bare breasts, or nude content is requested, include natural rounded breast shape, visible breast projection, and perky nipples when visible
 
 - If nudity is requested, do not alternate between clothed and unclothed prompts
 
