@@ -175,15 +175,6 @@ def render_premium_gallery(selected_output_dir):
 
             with action_col1:
                 if st.button(
-                    "✨",
-                    key=f"premium_gallery_prepare_{safe_image_key}",
-                    help="Prepare for Premium Publishing",
-                    use_container_width=True,
-                ):
-                    st.toast("✨ Premium publishing prep coming soon!")
-
-            with action_col2:
-                if st.button(
                     "📸",
                     key=f"premium_gallery_queue_{safe_image_key}",
                     help="Add to Premium Photoshoot Queue",
@@ -205,23 +196,74 @@ def render_premium_gallery(selected_output_dir):
 
                     st.rerun()
 
-            with action_col3:
+            with action_col2:
                 if st.button(
                     "🎨",
                     key=f"premium_gallery_multi_edit_{safe_image_key}",
                     help="Open in Multi Edit Studio",
                     use_container_width=True,
                 ):
-                    st.toast("🎨 Premium Multi Edit coming soon!")
+                    sent_to_edit_dir = premium_gallery_dir / "Sent-to-Edit"
+                    sent_to_edit_dir.mkdir(
+                        parents=True,
+                        exist_ok=True,
+                    )
 
-            with action_col4:
+                    sent_to_edit_path = get_unique_image_path(
+                        sent_to_edit_dir,
+                        image_path.name,
+                    )
+
+                    shutil.move(
+                        str(image_path),
+                        str(sent_to_edit_path),
+                    )
+
+                    st.session_state["multi_edit_source_image"] = str(sent_to_edit_path)
+                    st.session_state["multi_edit_origin"] = "premium"
+                    st.session_state["edit_mode"] = None
+
+                    st.session_state["show_multi_edit_studio"] = True
+                    st.session_state["show_premium_gallery"] = False
+                    st.session_state["show_premium_photoshoot_queue"] = False
+
+                    st.session_state["save_toast_message"] = (
+                        "🎨 Moved premium image to Multi Edit Studio"
+                    )
+
+                    st.rerun()
+
+            with action_col3:
                 if st.button(
                     "🎬",
                     key=f"premium_gallery_video_{safe_image_key}",
-                    help="Video Studio Coming Soon",
+                    help="Video Studio (Coming Soon)",
                     use_container_width=True,
                 ):
                     st.toast("🎬 Video Studio coming soon!")
+
+            with action_col4:
+                if st.button(
+                    "➡️",
+                    key=f"premium_gallery_move_social_{safe_image_key}",
+                    help="Move to Social Content Gallery",
+                    use_container_width=True,
+                ):
+                    social_destination = get_unique_image_path(
+                        Path(selected_output_dir),
+                        image_path.name,
+                    )
+
+                    shutil.move(
+                        str(image_path),
+                        str(social_destination),
+                    )
+
+                    st.session_state["save_toast_message"] = (
+                        "➡️ Moved image to Social Content Gallery"
+                    )
+
+                    st.rerun()
 
             with action_col5:
                 if st.button(
@@ -230,8 +272,7 @@ def render_premium_gallery(selected_output_dir):
                     help="Move to Junk",
                     use_container_width=True,
                 ):
-                    junk_dir = Path(selected_output_dir) / "Junk-Outdated"
-
+                    junk_dir = premium_gallery_dir / "Junk-Outdated"
                     junk_dir.mkdir(
                         parents=True,
                         exist_ok=True,
