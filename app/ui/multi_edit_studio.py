@@ -222,45 +222,135 @@ def render_result_actions(
                 st.rerun()
 
 
-def render_edit_landing(
-    source_path,
-):
-    st.markdown("### Choose Edit Type")
+def get_edit_origin():
+    return st.session_state.get("multi_edit_origin", "social")
 
-    st.image(
-        str(source_path),
-        width=420,
+
+def return_to_origin_gallery():
+    origin = get_edit_origin()
+
+    st.session_state["show_multi_edit_studio"] = False
+    st.session_state["edit_mode"] = None
+
+    if origin == "premium":
+        st.session_state["show_premium_gallery"] = True
+        st.session_state["show_gallery"] = False
+    else:
+        st.session_state["show_gallery"] = True
+        st.session_state["show_premium_gallery"] = False
+
+
+def restore_original_to_gallery(source_path):
+    gallery_root = source_path.parent.parent
+
+    return_path = get_unique_image_path(
+        gallery_root,
+        source_path.name,
     )
 
-    col1, col2 = st.columns(2)
+    shutil.move(
+        str(source_path),
+        str(return_path),
+    )
 
-    with col1:
-        st.markdown("#### ✏️ Single Edit")
-        st.caption(
-            "Use text instructions only. Example: change her skirt to black denim."
+    st.session_state["multi_edit_source_image"] = None
+    clear_edit_state()
+
+    st.session_state["save_toast_message"] = (
+        "↩️ Original image moved back to its gallery"
+    )
+
+    return_to_origin_gallery()
+    st.rerun()
+
+
+def render_edit_landing(source_path):
+    st.markdown("### 🎨 Choose Edit Type")
+
+    preview_col, action_col = st.columns([4, 8], gap="large")
+
+    with preview_col:
+        st.image(
+            str(source_path),
+            use_container_width=True,
         )
 
         if st.button(
-            "Open Single Edit",
+            "↩️ Put Image Back in Gallery",
+            key="restore_original_from_edit_landing",
+            help="Move this image back to the gallery it came from",
             use_container_width=True,
         ):
-            st.session_state["edit_mode"] = "single"
-            clear_edit_state()
-            st.rerun()
+            restore_original_to_gallery(source_path)
 
-    with col2:
-        st.markdown("#### 🎨 Multi Edit")
-        st.caption(
-            "Upload a reference asset. Example: swap in a shirt, purse, lingerie set, or prop."
-        )
+    with action_col:
+        st.markdown("#### What do you want to do?")
 
-        if st.button(
-            "Open Multi Edit",
-            use_container_width=True,
-        ):
-            st.session_state["edit_mode"] = "multi"
-            clear_edit_state()
-            st.rerun()
+        single_card, multi_card = st.columns(2, gap="large")
+
+        with single_card:
+            st.markdown(
+                """
+                <div style="
+                    border: 1px solid #ddd;
+                    border-radius: 14px;
+                    padding: 22px;
+                    min-height: 210px;
+                    background: #ffffff;
+                ">
+                    <h3 style="margin-top: 0;">✏️ Single Edit</h3>
+                    <p style="color: #666; font-size: 14px;">
+                        Use text instructions only.
+                    </p>
+                    <p style="color: #888; font-size: 13px;">
+                        Best for changing color, fixing small details, adjusting clothing,
+                        or making simple edits to the same image.
+                    </p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+            if st.button(
+                "Open Single Edit",
+                key="open_single_edit_from_landing",
+                use_container_width=True,
+            ):
+                st.session_state["edit_mode"] = "single"
+                clear_edit_state()
+                st.rerun()
+
+        with multi_card:
+            st.markdown(
+                """
+                <div style="
+                    border: 1px solid #ddd;
+                    border-radius: 14px;
+                    padding: 22px;
+                    min-height: 210px;
+                    background: #ffffff;
+                ">
+                    <h3 style="margin-top: 0;">🎨 Multi Edit</h3>
+                    <p style="color: #666; font-size: 14px;">
+                        Use a second reference image.
+                    </p>
+                    <p style="color: #888; font-size: 13px;">
+                        Best for swapping clothing, adding a purse, using a product,
+                        matching a lingerie set, or adding a prop.
+                    </p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+            if st.button(
+                "Open Multi Edit",
+                key="open_multi_edit_from_landing",
+                use_container_width=True,
+            ):
+                st.session_state["edit_mode"] = "multi"
+                clear_edit_state()
+                st.rerun()
 
 
 def render_single_edit(
@@ -514,11 +604,19 @@ def render_multi_edit_studio():
             "⬅ Back",
             use_container_width=True,
         ):
-            st.session_state["edit_mode"] = None
-            st.session_state["show_multi_edit_studio"] = False
-            st.session_state["show_gallery"] = True
-            st.rerun()
+            edit_mode = st.session_state.get("edit_mode")
 
+            if edit_mode:
+                # Single Edit or Multi Edit
+                # Return to Choose Edit Type screen
+                st.session_state["edit_mode"] = None
+            else:
+                # Already on Choose Edit Type screen
+                # Return to originating gallery
+                return_to_origin_gallery()
+
+            st.rerun()
+            
     st.markdown("---")
 
     result_url = st.session_state.get(

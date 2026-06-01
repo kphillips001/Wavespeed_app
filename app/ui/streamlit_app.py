@@ -417,6 +417,26 @@ st.sidebar.caption(
     f"Save folder: {selected_output_dir}"
 )
 
+st.sidebar.markdown("---")
+
+if st.sidebar.button(
+    "🏠 Return Home",
+    use_container_width=True,
+):
+    st.session_state["show_photoshoot_queue"] = False
+    st.session_state["show_gallery"] = False
+    st.session_state["show_staging_area"] = False
+    st.session_state["show_premium_studio"] = False
+    st.session_state["show_premium_gallery"] = False
+    st.session_state["show_premium_photoshoot_queue"] = False
+    st.session_state["show_multi_edit_studio"] = False
+
+    st.session_state["selected_gallery_photoshoot"] = None
+    st.session_state["active_photoshoot"] = False
+    st.session_state["edit_mode"] = None
+
+    st.rerun()
+
 # =====================================
 # RESTORE SAVED BATCH
 # =====================================
