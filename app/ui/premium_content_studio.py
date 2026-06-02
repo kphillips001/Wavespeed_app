@@ -12,6 +12,7 @@ from app.config.content_paths import (
 
 from app.services.premium_director_service import (
     generate_premium_prompts,
+    generate_explicit_prompts,
 )
 
 from app.services.premium_render_service import (
@@ -411,11 +412,58 @@ def render_premium_content_studio(
     # GET PREMIUM PROMPTS
     # -----------------------------
 
-    get_premium_prompts_clicked = st.button(
-        "✨ Get Premium Prompts",
-        use_container_width=True,
-        disabled=not tags_for_prompt_generation,
-    )
+    prompt_button_col1, prompt_button_col2 = st.columns(2)
+
+    with prompt_button_col1:
+        prompt_button_col1, prompt_button_col2 = st.columns(2)
+
+        with prompt_button_col1:
+            get_premium_prompts_clicked = st.button(
+                "✨ Get Premium Prompts",
+                use_container_width=True,
+                disabled=not tags_for_prompt_generation,
+            )
+
+        with prompt_button_col2:
+            get_explicit_prompts_clicked = st.button(
+                "🔥 Get Explicit Prompts",
+                use_container_width=True,
+                disabled=not tags_for_prompt_generation,
+            )
+
+    if get_explicit_prompts_clicked:
+        with st.spinner("Generating bold premium prompts with Grok..."):
+            explicit_prompts = generate_explicit_prompts(
+                creative_tags=tags_for_prompt_generation,
+                prompt_count=10,
+            )
+
+        st.session_state["premium_uploaded_file"] = premium_uploaded_file
+        st.session_state["premium_user_tags"] = premium_user_tags
+        st.session_state["premium_tags_used_for_prompts"] = (
+            tags_for_prompt_generation
+        )
+        st.session_state["premium_tag_source_used_for_prompts"] = (
+            selected_tag_source
+        )
+        st.session_state["premium_prompt_mode"] = "explicit"
+
+        st.session_state["premium_prompts"] = [
+            {
+                "id": f"explicit_prompt_{index}",
+                "text": prompt,
+            }
+            for index, prompt in enumerate(
+                explicit_prompts,
+                start=1,
+            )
+        ]
+
+        st.session_state["premium_generated_images"] = []
+        st.session_state["premium_failed_images"] = []
+        st.session_state["premium_generation_complete"] = False
+
+        st.success("Bold premium prompt batch generated.")
 
     if premium_uploaded_file is None:
         st.caption(
@@ -455,6 +503,40 @@ def render_premium_content_studio(
 
         st.success("Premium prompt batch generated.")
 
+        if get_explicit_prompts_clicked:
+            with st.spinner("Generating explicit prompts with Grok..."):
+                explicit_prompts = generate_explicit_prompts(
+                    creative_tags=tags_for_prompt_generation,
+                    prompt_count=10,
+                )
+
+            st.session_state["premium_uploaded_file"] = premium_uploaded_file
+            st.session_state["premium_user_tags"] = premium_user_tags
+            st.session_state["premium_tags_used_for_prompts"] = (
+                tags_for_prompt_generation
+            )
+            st.session_state["premium_tag_source_used_for_prompts"] = (
+                selected_tag_source
+            )
+            st.session_state["premium_prompt_mode"] = "explicit"
+
+            st.session_state["premium_prompts"] = [
+                {
+                    "id": f"explicit_prompt_{index}",
+                    "text": prompt,
+                }
+                for index, prompt in enumerate(
+                    explicit_prompts,
+                    start=1,
+                )
+            ]
+
+            st.session_state["premium_generated_images"] = []
+            st.session_state["premium_failed_images"] = []
+            st.session_state["premium_generation_complete"] = False
+
+            st.success("Explicit prompt batch generated.")
+
     render_premium_prompt_expander()
 
     st.subheader("Premium Renderer")
@@ -463,6 +545,7 @@ def render_premium_content_studio(
         "Choose premium render engine",
         options=[
             "WAN 2.7 Image Edit",
+            "Seedream 5.0 Lite Edit",
         ],
         index=0,
         key="premium_renderer",
@@ -542,12 +625,13 @@ def render_premium_content_studio(
                                     image_item["prompt"]
                                 )
 
-        with st.spinner("Generating premium images with WAN 2.7..."):
+        with st.spinner(f"Generating premium images with {premium_renderer}..."):
 
             render_results = generate_premium_images(
                 premium_prompts=st.session_state["premium_prompts"],
                 uploaded_file=active_premium_uploaded_file,
                 selected_output_dir=selected_output_dir,
+                premium_renderer=premium_renderer,
                 progress_callback=update_premium_progress,
             )
 

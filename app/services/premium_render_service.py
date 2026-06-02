@@ -27,6 +27,11 @@ WAN_27_IMAGE_EDIT_MODEL = {
     "endpoint": "https://api.wavespeed.ai/api/v3/alibaba/wan-2.7/image-edit",
 }
 
+SEEDREAM_50_LITE_EDIT_MODEL = {
+    "name": "Seedream 5.0 Lite Edit",
+    "endpoint": "https://api.wavespeed.ai/api/v3/bytedance/seedream-v5.0-lite/edit",
+}
+
 
 def save_uploaded_reference_to_temp(uploaded_file):
     suffix = Path(uploaded_file.name).suffix or ".png"
@@ -52,6 +57,7 @@ def generate_premium_images(
     premium_prompts,
     uploaded_file,
     selected_output_dir,
+    premium_renderer,
     progress_callback=None,
 ):
     load_dotenv()
@@ -134,11 +140,16 @@ def generate_premium_images(
                 )
 
             try:
+                if premium_renderer == "Seedream 5.0 Lite Edit":
+                    selected_model = SEEDREAM_50_LITE_EDIT_MODEL
+                else:
+                    selected_model = WAN_27_IMAGE_EDIT_MODEL
+
                 request_id = submit_wavespeed_task(
                     prompt=prompt_text,
                     image_url=reference_url,
                     api_key=wavespeed_key,
-                    model_url=WAN_27_IMAGE_EDIT_MODEL["endpoint"],
+                    model_url=selected_model["endpoint"],
                 )
 
                 output_url = poll_wavespeed_result(
