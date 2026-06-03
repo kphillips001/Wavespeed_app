@@ -5,11 +5,6 @@ import time
 import requests
 import streamlit as st
 
-from app.config.content_paths import (
-    get_premium_gallery_dir,
-    get_premium_photoshoot_dir,
-)
-
 from app.services.premium_director_service import (
     generate_premium_prompts,
     generate_explicit_prompts,
@@ -19,13 +14,17 @@ from app.services.premium_render_service import (
     generate_premium_images,
 )
 
-from app.ui.image_file_utils import (
-    get_unique_image_path,
-)
-
 from app.services.premium_tag_enhancer_service import (
     enhance_premium_tags,
     surprise_premium_tags,
+)
+
+from app.ui.components.reference_image_selector import (
+    render_reference_image_selector,
+)
+
+from app.ui.image_file_utils import (
+    get_unique_image_path,
 )
 
 
@@ -37,17 +36,11 @@ def download_image(image_url, output_path):
         file.write(response.content)
 
 
-def save_premium_generated_images(
-    images,
-    output_dir,
-):
+def save_premium_generated_images(images, output_dir):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     saved_paths = []
 
-    Path(output_dir).mkdir(
-        parents=True,
-        exist_ok=True,
-    )
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
 
     for index, image_item in enumerate(images, start=1):
         image_filename = f"premium_{timestamp}_{index:03d}.png"
@@ -71,10 +64,7 @@ def render_premium_prompt_expander():
     if not st.session_state["premium_prompts"]:
         return
 
-    with st.expander(
-        "View Generated Premium Prompts",
-        expanded=True,
-    ):
+    with st.expander("View Generated Premium Prompts", expanded=True):
         prompts_to_delete = []
 
         for index, prompt_data in enumerate(
@@ -114,9 +104,7 @@ def render_premium_prompt_expander():
             st.rerun()
 
 
-def render_premium_generated_image_gallery(
-    selected_output_dir,
-):
+def render_premium_generated_image_gallery(selected_output_dir):
     if (
         not st.session_state["premium_generated_images"]
         or not st.session_state.get("premium_generation_complete", False)
@@ -132,7 +120,6 @@ def render_premium_generated_image_gallery(
         image_id = image_item.get("id", f"premium_image_{i + 1}")
 
         with cols[i % 3]:
-
             st.image(image_item["url"], use_container_width=True)
 
             st.checkbox("Discard", key=f"premium_discard_{image_id}")
@@ -166,21 +153,22 @@ def render_premium_generated_image_gallery(
             photoshoot_ids.append(image_id)
 
     photoshoot_ids = [
-        image_id for image_id in photoshoot_ids
+        image_id
+        for image_id in photoshoot_ids
         if image_id not in discard_ids
     ]
 
-    if discard_ids:
-        button_label = "🗑️ Discard Selected"
-    else:
-        button_label = "💾 Save All Images"
+    button_label = (
+        "🗑️ Discard Selected"
+        if discard_ids
+        else "💾 Save All Images"
+    )
 
     if st.button(button_label, use_container_width=True):
-
         if discard_ids:
-
             st.session_state["premium_generated_images"] = [
-                img for img in st.session_state["premium_generated_images"]
+                img
+                for img in st.session_state["premium_generated_images"]
                 if img["id"] not in discard_ids
             ]
 
@@ -191,7 +179,6 @@ def render_premium_generated_image_gallery(
             st.rerun()
 
         else:
-
             st.session_state["save_toast_message"] = (
                 f"✅ Saved {len(st.session_state['premium_generated_images'])} premium image(s). "
                 f"📸 Sent {len(photoshoot_ids)} premium image(s) to Photoshoot."
@@ -204,18 +191,13 @@ def render_premium_generated_image_gallery(
             st.session_state["premium_prompts"] = []
             st.session_state["premium_generation_complete"] = False
 
-            st.session_state["premium_uploader_key"] += 1
-
             st.rerun()
 
 
-def render_premium_content_studio(
-    selected_output_dir,
-):
-    st.subheader("Reference Image")
-
-    if "premium_uploader_key" not in st.session_state:
-        st.session_state["premium_uploader_key"] = 0
+def render_premium_content_studio(selected_output_dir):
+    # -----------------------------
+    # SESSION STATE
+    # -----------------------------
 
     if "premium_prompts" not in st.session_state:
         st.session_state["premium_prompts"] = []
@@ -229,16 +211,25 @@ def render_premium_content_studio(
     if "premium_generation_complete" not in st.session_state:
         st.session_state["premium_generation_complete"] = False
 
-    premium_uploaded_file = st.file_uploader(
-        "Upload Premium Reference Image",
-        type=["png", "jpg", "jpeg", "webp"],
-        key=f"premium_uploaded_file_{st.session_state['premium_uploader_key']}",
+    # -----------------------------
+    # PREMIUM REFERENCE LIBRARY
+    # -----------------------------
+
+    premium_reference_dir = (
+        Path(selected_output_dir)
+        / "NSFW Reference Images"
     )
 
-    active_premium_uploaded_file = (
-        premium_uploaded_file
-        or st.session_state.get("premium_uploaded_file")
+    selected_reference_image = render_reference_image_selector(
+        reference_dir=str(premium_reference_dir),
+        session_key="premium_reference_image",
+        title="Reference Image Library",
+        columns=6,
     )
+
+    active_premium_reference_image = selected_reference_image
+
+    st.markdown("---")
 
     st.subheader("Creative Tags")
 
@@ -415,21 +406,18 @@ def render_premium_content_studio(
     prompt_button_col1, prompt_button_col2 = st.columns(2)
 
     with prompt_button_col1:
-        prompt_button_col1, prompt_button_col2 = st.columns(2)
+        get_premium_prompts_clicked = st.button(
+            "✨ Get Premium Prompts",
+            use_container_width=True,
+            disabled=not tags_for_prompt_generation,
+        )
 
-        with prompt_button_col1:
-            get_premium_prompts_clicked = st.button(
-                "✨ Get Premium Prompts",
-                use_container_width=True,
-                disabled=not tags_for_prompt_generation,
-            )
-
-        with prompt_button_col2:
-            get_explicit_prompts_clicked = st.button(
-                "🔥 Get Explicit Prompts",
-                use_container_width=True,
-                disabled=not tags_for_prompt_generation,
-            )
+    with prompt_button_col2:
+        get_explicit_prompts_clicked = st.button(
+            "🔥 Get Explicit Prompts",
+            use_container_width=True,
+            disabled=not tags_for_prompt_generation,
+        )
 
     if get_explicit_prompts_clicked:
         with st.spinner("Generating bold premium prompts with Grok..."):
@@ -438,14 +426,10 @@ def render_premium_content_studio(
                 prompt_count=10,
             )
 
-        st.session_state["premium_uploaded_file"] = premium_uploaded_file
+        st.session_state["premium_reference_image"] = active_premium_reference_image
         st.session_state["premium_user_tags"] = premium_user_tags
-        st.session_state["premium_tags_used_for_prompts"] = (
-            tags_for_prompt_generation
-        )
-        st.session_state["premium_tag_source_used_for_prompts"] = (
-            selected_tag_source
-        )
+        st.session_state["premium_tags_used_for_prompts"] = tags_for_prompt_generation
+        st.session_state["premium_tag_source_used_for_prompts"] = selected_tag_source
         st.session_state["premium_prompt_mode"] = "explicit"
 
         st.session_state["premium_prompts"] = [
@@ -465,9 +449,9 @@ def render_premium_content_studio(
 
         st.success("Bold premium prompt batch generated.")
 
-    if premium_uploaded_file is None:
+    if not active_premium_reference_image:
         st.caption(
-            "You can generate prompts now, but upload a premium reference image before generating images."
+            "Select or upload a reference image before generating premium images."
         )
 
     if get_premium_prompts_clicked:
@@ -477,14 +461,11 @@ def render_premium_content_studio(
                 prompt_count=10,
             )
 
-        st.session_state["premium_uploaded_file"] = premium_uploaded_file
+        st.session_state["premium_reference_image"] = active_premium_reference_image
         st.session_state["premium_user_tags"] = premium_user_tags
-        st.session_state["premium_tags_used_for_prompts"] = (
-            tags_for_prompt_generation
-        )
-        st.session_state["premium_tag_source_used_for_prompts"] = (
-            selected_tag_source
-        )
+        st.session_state["premium_tags_used_for_prompts"] = tags_for_prompt_generation
+        st.session_state["premium_tag_source_used_for_prompts"] = selected_tag_source
+        st.session_state["premium_prompt_mode"] = "premium"
 
         st.session_state["premium_prompts"] = [
             {
@@ -502,40 +483,6 @@ def render_premium_content_studio(
         st.session_state["premium_generation_complete"] = False
 
         st.success("Premium prompt batch generated.")
-
-        if get_explicit_prompts_clicked:
-            with st.spinner("Generating explicit prompts with Grok..."):
-                explicit_prompts = generate_explicit_prompts(
-                    creative_tags=tags_for_prompt_generation,
-                    prompt_count=10,
-                )
-
-            st.session_state["premium_uploaded_file"] = premium_uploaded_file
-            st.session_state["premium_user_tags"] = premium_user_tags
-            st.session_state["premium_tags_used_for_prompts"] = (
-                tags_for_prompt_generation
-            )
-            st.session_state["premium_tag_source_used_for_prompts"] = (
-                selected_tag_source
-            )
-            st.session_state["premium_prompt_mode"] = "explicit"
-
-            st.session_state["premium_prompts"] = [
-                {
-                    "id": f"explicit_prompt_{index}",
-                    "text": prompt,
-                }
-                for index, prompt in enumerate(
-                    explicit_prompts,
-                    start=1,
-                )
-            ]
-
-            st.session_state["premium_generated_images"] = []
-            st.session_state["premium_failed_images"] = []
-            st.session_state["premium_generation_complete"] = False
-
-            st.success("Explicit prompt batch generated.")
 
     render_premium_prompt_expander()
 
@@ -556,13 +503,12 @@ def render_premium_content_studio(
         "🔥 Generate Premium Images",
         use_container_width=True,
         disabled=(
-            active_premium_uploaded_file is None
+            active_premium_reference_image is None
             or not st.session_state["premium_prompts"]
         ),
     )
 
     if generate_premium_images_clicked:
-
         st.session_state["premium_generated_images"] = []
         st.session_state["premium_failed_images"] = []
         st.session_state["premium_generation_complete"] = False
@@ -581,20 +527,12 @@ def render_premium_content_studio(
             progress_value = 0
 
             if total > 0:
-                progress_value = int(
-                    (current / total) * 100
-                )
+                progress_value = int((current / total) * 100)
 
             progress_bar.progress(progress_value)
 
-            completed_count = len(
-                generated_images or []
-            )
-
-            failed_count = len(
-                failed_images or []
-            )
-
+            completed_count = len(generated_images or [])
+            failed_count = len(failed_images or [])
             remaining_count = total - completed_count - failed_count
 
             status_placeholder.info(
@@ -611,9 +549,7 @@ def render_premium_content_studio(
 
                     cols = st.columns(3)
 
-                    for image_index, image_item in enumerate(
-                        generated_images
-                    ):
+                    for image_index, image_item in enumerate(generated_images):
                         with cols[image_index % 3]:
                             st.image(
                                 image_item["url"],
@@ -621,37 +557,31 @@ def render_premium_content_studio(
                             )
 
                             with st.expander("Prompt"):
-                                st.write(
-                                    image_item["prompt"]
-                                )
+                                st.write(image_item["prompt"])
 
         with st.spinner(f"Generating premium images with {premium_renderer}..."):
-
             render_results = generate_premium_images(
                 premium_prompts=st.session_state["premium_prompts"],
-                uploaded_file=active_premium_uploaded_file,
+                uploaded_file=active_premium_reference_image,
                 selected_output_dir=selected_output_dir,
                 premium_renderer=premium_renderer,
                 progress_callback=update_premium_progress,
             )
 
-        st.session_state["premium_generated_images"] = (
-            render_results.get("generated_images", [])
+        st.session_state["premium_generated_images"] = render_results.get(
+            "generated_images",
+            [],
         )
 
-        st.session_state["premium_failed_images"] = (
-            render_results.get("failed_images", [])
+        st.session_state["premium_failed_images"] = render_results.get(
+            "failed_images",
+            [],
         )
 
         st.session_state["premium_generation_complete"] = True
 
-        completed_count = len(
-            st.session_state["premium_generated_images"]
-        )
-
-        failed_count = len(
-            st.session_state["premium_failed_images"]
-        )
+        completed_count = len(st.session_state["premium_generated_images"])
+        failed_count = len(st.session_state["premium_failed_images"])
 
         if failed_count == 0:
             st.success(

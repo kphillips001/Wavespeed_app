@@ -22,8 +22,11 @@ MODELS = {
         "name": "ByteDance Seedream 5.0 Lite Edit",
         "endpoint": "https://api.wavespeed.ai/api/v3/bytedance/seedream-v5.0-lite/edit",
     },
+    "WAN_2_7": {
+        "name": "WAN 2.7 Image Edit",
+        "endpoint": "https://api.wavespeed.ai/api/v3/alibaba/wan-2.7/image-edit",
+    },
 }
-
 
 PERSONA_OUTPUT_DIRS = {
     "1": {

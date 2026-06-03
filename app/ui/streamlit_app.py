@@ -104,12 +104,25 @@ from main import (
 
 
 # =====================================
-# UI
+# UI COMPONENTS
+# =====================================
+
+from app.ui.components.reference_image_selector import (
+    render_reference_image_selector,
+)
+
+
+# =====================================
+# UI PAGES / HELPERS
 # =====================================
 
 from app.ui.image_file_utils import (
     get_image_files,
     get_unique_image_path,
+)
+
+from app.ui.multi_edit_studio import (
+    render_multi_edit_studio,
 )
 
 from app.ui.premium_gallery import (
@@ -120,6 +133,10 @@ from app.ui.premium_studio_page import (
     render_premium_studio_page,
 )
 
+from app.ui.social_content_studio import (
+    render_social_content_studio,
+)
+
 from app.ui.social_gallery import (
     render_gallery_image_grid,
 )
@@ -127,10 +144,6 @@ from app.ui.social_gallery import (
 from app.ui.staging_area import (
     render_staging_area,
     render_staging_sidebar_button,
-)
-
-from app.ui.multi_edit_studio import (
-    render_multi_edit_studio,
 )
 
 
@@ -150,6 +163,40 @@ wavespeed_key = os.getenv(
 
 imgbb_key = os.getenv(
     "IMGBB_API_KEY"
+)
+
+# =====================================
+# UI PAGES / HELPERS
+# =====================================
+
+from app.ui.image_file_utils import (
+    get_image_files,
+    get_unique_image_path,
+)
+
+from app.ui.multi_edit_studio import (
+    render_multi_edit_studio,
+)
+
+from app.ui.premium_gallery import (
+    render_premium_gallery,
+)
+
+from app.ui.premium_studio_page import (
+    render_premium_studio_page,
+)
+
+from app.ui.social_content_studio import (
+    render_social_content_studio,
+)
+
+from app.ui.social_gallery import (
+    render_gallery_image_grid,
+)
+
+from app.ui.staging_area import (
+    render_staging_area,
+    render_staging_sidebar_button,
 )
 
 
@@ -413,6 +460,16 @@ selected_persona_key = persona_names[selected_creator_name]
 selected_output_dir = PERSONA_OUTPUT_DIRS[selected_persona_key]["output_dir"]
 ensure_content_dirs(selected_output_dir)
 
+reference_images_dir = (
+    Path(selected_output_dir)
+    / "Reference Images"
+)
+
+reference_images_dir.mkdir(
+    parents=True,
+    exist_ok=True,
+)
+
 st.sidebar.caption(
     f"Save folder: {selected_output_dir}"
 )
@@ -570,619 +627,18 @@ elif st.session_state.get("show_premium_studio", False):
 
 elif show_main_generator:
 
-    st.subheader("Reference Image")
-
-    if "uploader_key" not in st.session_state:
-        st.session_state["uploader_key"] = 0
-
-    uploaded_file = st.file_uploader(
-        "Upload Reference Image",
-        type=["png", "jpg", "jpeg", "webp"],
-        key=f"uploaded_file_{st.session_state['uploader_key']}",
+    render_social_content_studio(
+        selected_output_dir=selected_output_dir,
+        selected_creator_name=selected_creator_name,
+        reference_images_dir=reference_images_dir,
+        generation_mode=generation_mode,
+        platform_mode=platform_mode,
+        spice_level=spice_level,
+        prompt_count=prompt_count,
+        grok_key=grok_key,
+        wavespeed_key=wavespeed_key,
+        imgbb_key=imgbb_key,
     )
-
-    st.subheader("Creative Tags")
-
-    st.caption(
-        "Enter ideas, not prompts. The Creative Director will build the shoot."
-    )
-
-    # --------------------------------
-    # SESSION STATE
-    # --------------------------------
-
-    if "creative_tags_input_box" not in st.session_state:
-        st.session_state["creative_tags_input_box"] = ""
-
-    # --------------------------------
-    # I FEEL LUCKY HANDLER
-    # --------------------------------
-
-    def fill_lucky_tags():
-        lucky_tags = generate_lucky_social_tags(
-            prompt_count=prompt_count
-        )
-
-        if isinstance(lucky_tags, list):
-            lucky_tags = ", ".join(
-                str(tag).strip()
-                for tag in lucky_tags
-                if str(tag).strip()
-            )
-
-        st.session_state["creative_tags_input_box"] = str(lucky_tags).strip()
-
-    # --------------------------------
-    # CREATIVE TAGS BOX
-    # --------------------------------
-
-    user_tags = st.text_area(
-        label="Creative Tags",
-        key="creative_tags_input_box",
-        placeholder="Type your creative tags here...",
-        label_visibility="collapsed",
-    )
-
-    # --------------------------------
-    # I FEEL LUCKY
-    # --------------------------------
-
-    st.button(
-        "🎲 I Feel Lucky",
-        use_container_width=True,
-        on_click=fill_lucky_tags,
-    )
-
-    # -----------------------------
-    # GENERATE BUTTON
-    # -----------------------------
-    get_prompts_button_label = (
-        "🔄 Get Fresh New Prompts"
-        if (
-            "generated_prompts" in st.session_state
-            and st.session_state["generated_prompts"]
-        )
-        else "✨ Get Prompts"
-    )
-
-    get_prompts_clicked = st.button(
-        get_prompts_button_label,
-        use_container_width=True,
-        disabled=uploaded_file is None,
-    )
-
-    if uploaded_file is None:
-        st.caption("Upload a reference image before creating a shoot.")
-
-    # -----------------------------
-    # GENERATE PROMPTS
-    # -----------------------------
-    if get_prompts_clicked:
-
-        if not user_tags.strip():
-            st.error("Please enter some creative tags.")
-            st.stop()
-
-        if not grok_key:
-            st.error("Missing GROK_API_KEY in .env")
-            st.stop()
-
-        st.info("Generating prompts with Grok...")
-
-        selected_generation_mode = None
-
-        for mode in GENERATION_MODES.values():
-            if mode["name"] == generation_mode:
-                selected_generation_mode = mode
-                break
-
-        meta_prompt = build_chatgpt_prompt(
-            prompt_count=prompt_count,
-            user_request=user_tags,
-            generation_mode=selected_generation_mode,
-            platform_mode=platform_mode,
-            spice_level=spice_level,
-        )
-
-        refresh_nonce = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
-
-        meta_prompt += f"""
-
-        IMPORTANT FRESHNESS RULE:
-
-        This is a regeneration request.
-
-        Create a completely new prompt batch.
-
-        Do not repeat:
-        - previous poses
-        - previous camera angles
-        - previous framing
-        - previous body positions
-        - previous scene compositions
-        - previous wording
-
-        Keep the same creative tags, but make the ideas feel fresh.
-
-        Fresh request ID: {refresh_nonce}
-        """
-
-        prompts = generate_prompts_with_grok(
-            meta_prompt,
-            grok_key,
-        )
-
-        # Clear old prompt text widgets so Streamlit does not reuse stale values
-        for key in list(st.session_state.keys()):
-            if key.startswith("text_prompt_"):
-                del st.session_state[key]
-
-        # Give each prompt batch a unique ID
-        if "prompt_batch_id" not in st.session_state:
-            st.session_state["prompt_batch_id"] = 0
-
-        st.session_state["prompt_batch_id"] += 1
-
-        prompt_batch_id = st.session_state["prompt_batch_id"]
-
-        st.session_state["generated_prompts"] = [
-            {
-                "id": f"prompt_{prompt_batch_id}_{i}",
-                "text": prompt,
-            }
-            for i, prompt in enumerate(prompts, start=1)
-        ]
-
-        st.session_state["last_generation_mode"] = generation_mode
-        st.session_state["last_platform_mode"] = platform_mode
-        st.session_state["last_spice_level"] = spice_level
-        st.session_state["last_prompt_count"] = prompt_count
-        st.session_state["last_user_tags"] = user_tags
-        st.session_state["generated_images"] = []
-        st.session_state["failed_images"] = []
-        st.session_state["review_mode"] = "review"
-
-        st.success("Prompt batch generated.")
-
-        st.rerun()
-
-
-    # -----------------------------
-    # GENERATED PROMPTS DISPLAY
-    # -----------------------------
-    if (
-        "generated_prompts" in st.session_state
-        and st.session_state["generated_prompts"]
-    ):
-
-        with st.expander("View Generated Prompts", expanded=False):
-
-            for i, prompt_item in enumerate(
-                st.session_state["generated_prompts"],
-                start=1
-            ):
-
-                prompt_id = prompt_item["id"]
-                prompt_text = prompt_item["text"]
-
-                st.markdown(f"### Prompt {i}")
-
-                st.text_area(
-                    label=f"Prompt {i}",
-                    value=prompt_text,
-                    height=120,
-                    key=f"text_{prompt_id}",
-                    label_visibility="collapsed",
-                )
-
-                if st.button(
-                    f"🗑️ Delete Prompt {i}",
-                    key=f"delete_{prompt_id}",
-                ):
-
-                    st.session_state["generated_prompts"] = [
-                        item
-                        for item in st.session_state["generated_prompts"]
-                        if item["id"] != prompt_id
-                    ]
-
-                    st.rerun()
-
-        st.info(
-            f"{len(st.session_state['generated_prompts'])} prompt(s) currently selected for future image generation."
-        )
-
-        st.markdown("### User Tags")
-        st.code(st.session_state.get("last_user_tags", user_tags))
-
-
-    # -----------------------------
-    # CREATE SHOOT WITH NANO BANANA PRO
-    # -----------------------------
-    create_shoot_clicked = st.button(
-        "🍌 Create Shoot",
-        use_container_width=True,
-        disabled=(
-            "generated_prompts" not in st.session_state
-            or not st.session_state["generated_prompts"]
-            or uploaded_file is None
-        ),
-    )
-
-    has_resettable_state = (
-        bool(st.session_state.get("generated_prompts"))
-        or bool(st.session_state.get("generated_images"))
-        or bool(st.session_state.get("failed_images"))
-        or bool(st.session_state.get("generation_status"))
-        or bool(st.session_state.get("generation_complete"))
-        or bool(st.session_state.get("last_user_tags"))
-    )
-
-    if has_resettable_state:
-        reset_clicked = st.button(
-            "🔴 Reset Session",
-            use_container_width=True,
-        )
-
-        if reset_clicked:
-            reset_social_studio_session()
-            st.rerun()
-
-    if create_shoot_clicked:
-
-        if (
-            "generated_prompts" not in st.session_state
-            or not st.session_state["generated_prompts"]
-        ):
-            st.error("Get prompts first before creating a shoot.")
-            st.stop()
-
-        if not uploaded_file:
-            st.error("Please upload a reference image before creating a shoot.")
-            st.stop()
-
-        if not wavespeed_key:
-            st.error("Missing WAVESPEED_API_KEY in .env")
-            st.stop()
-
-        if not imgbb_key:
-            st.error("Missing IMGBB_API_KEY in .env")
-            st.stop()
-
-        selected_model = MODELS["2"]
-        total_prompts = len(st.session_state["generated_prompts"])
-
-        st.warning(
-            f"Creating {total_prompts} image(s) with {selected_model['name']}. This will use WaveSpeed credits."
-        )
-
-        with tempfile.NamedTemporaryFile(
-            delete=False,
-            suffix=Path(uploaded_file.name).suffix
-        ) as temp_file:
-            temp_file.write(uploaded_file.getvalue())
-            temp_image_path = temp_file.name
-
-        status_box = st.empty()
-        progress_bar = st.progress(0)
-        live_gallery = st.empty()
-
-        with st.spinner("Uploading reference image to ImgBB..."):
-            image_url = upload_to_imgbb(
-                temp_image_path,
-                imgbb_key
-            )
-
-            verify_image_url(image_url)
-
-        st.session_state["generated_images"] = []
-        st.session_state["failed_images"] = []
-        st.session_state["review_mode"] = "review"
-        st.session_state["discard_happened"] = False
-        st.session_state["last_saved_folder"] = None
-        st.session_state["generation_status"] = ""
-        st.session_state["generation_complete"] = False
-
-        for index, prompt_item in enumerate(
-            st.session_state["generated_prompts"],
-            start=1
-        ):
-
-            prompt_text = prompt_item["text"]
-
-            completed_count = len(st.session_state["generated_images"])
-            failed_count = len(st.session_state["failed_images"])
-
-            remaining_count = (
-                total_prompts
-                - completed_count
-                - failed_count
-            )
-
-            st.session_state["generation_status"] = (
-                f"Image {index} of {total_prompts}: processing...   "
-                f"✅ {completed_count} completed   "
-                f"❌ {failed_count} failed   "
-                f"⏳ {remaining_count} remaining"
-            )
-
-            status_box.info(st.session_state["generation_status"])
-
-            try:
-                request_id = submit_wavespeed_task(
-                    prompt=prompt_text,
-                    image_url=image_url,
-                    api_key=wavespeed_key,
-                    model_url=selected_model["endpoint"],
-                )
-
-                output_url = poll_wavespeed_result(
-                    request_id=request_id,
-                    api_key=wavespeed_key,
-                )
-
-                st.session_state["generated_images"].append(
-                    {
-                        "id": f"image_{index}",
-                        "prompt": prompt_text,
-                        "url": output_url,
-                        "status": "completed",
-                    }
-                )
-
-                save_current_batch_state(
-                    creator_name=selected_creator_name,
-                    creative_tags=st.session_state.get("last_user_tags", ""),
-                    generated_prompts=[
-                        item["text"]
-                        for item in st.session_state.get(
-                            "generated_prompts",
-                            []
-                        )
-                    ],
-                    generated_image_paths=[
-                        item["url"]
-                        for item in st.session_state.get(
-                            "generated_images",
-                            []
-                        )
-                    ],
-                )
-
-                with live_gallery.container():
-                    st.markdown("---")
-                    st.subheader("Live Generated Images")
-
-                    current_images = list(
-                        reversed(st.session_state["generated_images"])
-                    )
-
-                    cols = st.columns(2)
-
-                    for i, image_item in enumerate(current_images):
-                        with cols[i % 2]:
-                            st.image(
-                                image_item["url"],
-                                use_container_width=True,
-                            )
-
-            except Exception as error:
-                st.session_state["failed_images"].append(
-                    {
-                        "id": f"image_{index}",
-                        "prompt": prompt_text,
-                        "error": str(error),
-                        "status": "failed",
-                    }
-                )
-
-            completed_count = len(st.session_state["generated_images"])
-            failed_count = len(st.session_state["failed_images"])
-
-            remaining_count = (
-                total_prompts
-                - completed_count
-                - failed_count
-            )
-
-            st.session_state["generation_status"] = (
-                f"Image {index} of {total_prompts}: processing...   "
-                f"✅ {completed_count} completed   "
-                f"❌ {failed_count} failed   "
-                f"⏳ {remaining_count} remaining"
-            )
-
-            status_box.info(st.session_state["generation_status"])
-
-            progress_bar.progress(index / total_prompts)
-
-        completed_count = len(st.session_state["generated_images"])
-        failed_count = len(st.session_state["failed_images"])
-
-        st.session_state["generation_complete"] = True
-
-        st.session_state["generation_status"] = (
-            f"Generation complete. "
-            f"✅ {completed_count} completed   "
-            f"❌ {failed_count} failed"
-        )
-
-        if failed_count == 0:
-            status_box.success(st.session_state["generation_status"])
-        else:
-            status_box.warning(st.session_state["generation_status"])
-
-        live_gallery.empty()
-
-        st.rerun()
-
-# -----------------------------
-# GENERATED IMAGE GALLERY
-# -----------------------------
-if (
-    "generated_images" in st.session_state
-    and st.session_state["generated_images"]
-    and st.session_state.get("generation_complete", False)
-):
-
-    st.markdown("---")
-    st.subheader("Final Generated Images")
-
-    cols = st.columns(3)
-
-    for i, image_item in enumerate(st.session_state["generated_images"]):
-        image_id = image_item.get("id", f"image_{i + 1}")
-
-        with cols[i % 3]:
-
-            st.image(image_item["url"], use_container_width=True)
-
-            st.checkbox("Discard", key=f"discard_{image_id}")
-
-            st.checkbox(
-                "📸 Continue Photoshoot",
-                key=f"photoshoot_{image_id}",
-            )
-
-            st.checkbox(
-                "📖 Create Story (Coming Soon)",
-                key=f"story_{image_id}",
-                disabled=True,
-            )
-
-            with st.expander("Prompt"):
-                st.write(image_item["prompt"])
-
-    st.markdown("---")
-
-    discard_ids = []
-    photoshoot_ids = []
-
-    for image_item in st.session_state["generated_images"]:
-        image_id = image_item.get("id")
-
-        if st.session_state.get(f"discard_{image_id}", False):
-            discard_ids.append(image_id)
-
-        if st.session_state.get(f"photoshoot_{image_id}", False):
-            photoshoot_ids.append(image_id)
-
-    photoshoot_ids = [
-        image_id for image_id in photoshoot_ids
-        if image_id not in discard_ids
-    ]
-
-    if discard_ids:
-        button_label = "🗑️ Discard Selected"
-    else:
-        button_label = "💾 Save All Images"
-
-    if st.button(button_label, use_container_width=True):
-
-        if discard_ids:
-
-            st.session_state["generated_images"] = [
-                img for img in st.session_state["generated_images"]
-                if img["id"] not in discard_ids
-            ]
-
-            st.session_state["save_toast_message"] = (
-                f"🗑️ Discarded {len(discard_ids)} image(s)"
-            )
-
-            save_current_batch_state(
-                creator_name=selected_creator_name,
-                creative_tags=st.session_state.get(
-                    "last_user_tags",
-                    "",
-                ),
-                generated_prompts=[
-                    item["text"]
-                    for item in st.session_state.get(
-                        "generated_prompts",
-                        []
-                    )
-                ],
-                generated_image_paths=[
-                    item["url"]
-                    for item in st.session_state.get(
-                        "generated_images",
-                        []
-                    )
-                ],
-            )
-
-            st.rerun()
-
-        else:
-
-            normal_save_images = []
-            photoshoot_save_images = []
-
-            for image_item in st.session_state["generated_images"]:
-                image_id = image_item.get("id")
-
-                if image_id in photoshoot_ids:
-                    photoshoot_save_images.append(image_item)
-                else:
-                    normal_save_images.append(image_item)
-
-            selected_model = MODELS["2"]
-
-            normal_saved_count = 0
-            photoshoot_saved_count = 0
-
-            if normal_save_images:
-                save_generated_images(
-                    images=normal_save_images,
-                    output_dir=selected_output_dir,
-                    creator_name=selected_creator_name,
-                    model_name=selected_model["name"],
-                    user_tags=st.session_state.get("last_user_tags", user_tags),
-                    generation_mode=st.session_state.get("last_generation_mode", generation_mode),
-                    platform_mode=st.session_state.get("last_platform_mode", platform_mode),
-                    spice_level=st.session_state.get("last_spice_level", spice_level),
-                    uploaded_file=uploaded_file,
-                )
-
-                normal_saved_count = len(normal_save_images)
-
-            photoshoot_output_dir = r"D:\Ava Blackthorne\Ready\Wavespeed\Photoshoot"
-
-            if photoshoot_save_images:
-                save_generated_images(
-                    images=photoshoot_save_images,
-                    output_dir=photoshoot_output_dir,
-                    creator_name=selected_creator_name,
-                    model_name=selected_model["name"],
-                    user_tags=st.session_state.get("last_user_tags", user_tags),
-                    generation_mode=st.session_state.get("last_generation_mode", generation_mode),
-                    platform_mode=st.session_state.get("last_platform_mode", platform_mode),
-                    spice_level=st.session_state.get("last_spice_level", spice_level),
-                    uploaded_file=uploaded_file,
-                )
-
-                photoshoot_saved_count = len(photoshoot_save_images)
-
-            st.session_state["save_toast_message"] = (
-                f"✅ Saved {normal_saved_count} image(s). "
-                f"📸 Sent {photoshoot_saved_count} image(s) to Photoshoot."
-            )
-
-            st.session_state["save_toast_time"] = time.time()
-
-            clear_current_batch_state()
-            st.session_state["generated_images"] = []
-            st.session_state["failed_images"] = []
-            st.session_state["generated_prompts"] = []
-            st.session_state["discard_happened"] = False
-            st.session_state["last_saved_folder"] = None
-            st.session_state["generation_complete"] = False
-            st.session_state["generation_status"] = ""
-
-            st.session_state["uploader_key"] += 1
-            
-            st.rerun()
 
 # -----------------------------
 # PHOTOSHOOT QUEUE DISPLAY
