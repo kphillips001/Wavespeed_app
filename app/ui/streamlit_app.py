@@ -850,15 +850,10 @@ if st.session_state.get(
         "publish_review_image"
     ):
 
-        st.subheader("📲 Confirm Publishing")
+        st.subheader("📲 Confirm X Publishing")
 
         review_image_path = Path(
             st.session_state["publish_review_image"]
-        )
-
-        ig_caption = st.session_state.get(
-            "publish_review_instagram_caption",
-            ""
         )
 
         x_caption = st.session_state.get(
@@ -879,13 +874,7 @@ if st.session_state.get(
 
         with publish_col:
 
-            st.markdown("## Captions")
-
-            st.markdown("### Instagram")
-
-            st.info(
-                ig_caption
-            )
+            st.markdown("## Caption")
 
             st.markdown("### X")
 
@@ -893,21 +882,18 @@ if st.session_state.get(
                 x_caption
             )
 
-            post_col, copy_col, spacer_col = st.columns(
-                [2, 2, 8]
+            post_col, spacer_col = st.columns(
+                [2, 10]
             )
 
             with post_col:
 
                 if st.button(
-                    "🚀 Publish",
-                    key="confirm_publish_all_button",
-                    help="Publish to Instagram and X",
+                    "🚀 Publish to X",
+                    key="confirm_publish_x_button",
+                    help="Publish to X",
                     use_container_width=True,
                 ):
-
-                    instagram_success = False
-                    x_success = False
 
                     try:
 
@@ -915,29 +901,6 @@ if st.session_state.get(
                             image_path=str(review_image_path),
                             caption=x_caption,
                         )
-
-                        x_success = True
-
-                    except Exception as error:
-
-                        st.error(
-                            f"X post failed: {error}"
-                        )
-
-                    try:
-
-                        instagram_success = publish_to_instagram(
-                            image_path=str(review_image_path),
-                            caption=ig_caption,
-                        )
-
-                    except Exception as error:
-
-                        st.error(
-                            f"Instagram publish failed: {error}"
-                        )
-
-                    if instagram_success and x_success:
 
                         posted_socials_dir = (
                             review_image_path.parent.parent
@@ -963,15 +926,11 @@ if st.session_state.get(
 
                         st.session_state[
                             "save_toast_message"
-                        ] = "🚀 Published to Instagram + X and moved to Posted-Socials"
+                        ] = "🚀 Published to X and moved to Posted-Socials"
 
                         st.session_state[
                             "publish_review_image"
                         ] = None
-
-                        st.session_state[
-                            "publish_review_instagram_caption"
-                        ] = ""
 
                         st.session_state[
                             "publish_review_x_caption"
@@ -983,35 +942,11 @@ if st.session_state.get(
 
                         st.rerun()
 
-                    elif instagram_success:
+                    except Exception as error:
 
-                        st.success(
-                            "Instagram sent to phone, but X failed."
+                        st.error(
+                            f"X post failed: {error}"
                         )
-
-                    elif x_success:
-
-                        st.success(
-                            "Posted to X, but Instagram failed."
-                        )
-
-            with copy_col:
-
-                if st.button(
-                    "📋 Copy IG",
-                    key="copy_ig_caption_to_phone",
-                    help="Copy Instagram caption to phone",
-                    use_container_width=True,
-                ):
-
-                    copy_caption_to_phone_clipboard(
-                        ig_caption
-                    )
-
-                    st.toast(
-                        "📋 Instagram caption copied to phone",
-                        icon="✅",
-                    )
 
         st.markdown("---")
 
@@ -1024,10 +959,6 @@ if st.session_state.get(
             st.session_state[
                 "publish_review_image"
             ] = None
-
-            st.session_state[
-                "publish_review_instagram_caption"
-            ] = ""
 
             st.session_state[
                 "publish_review_x_caption"

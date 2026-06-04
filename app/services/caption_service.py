@@ -14,6 +14,69 @@ client = OpenAI(
 )
 
 
+CAPTION_COUNT = 10
+
+
+X_FALLBACK_CAPTIONS = [
+    "Be honest... are you answering texts right away or letting them sit for a little drama? 😂📱👇",
+    "Okay but what's one thing that instantly puts you in a better mood? ✨👇",
+    "If we were both ignoring responsibilities right now, what are we doing instead? 😌👇",
+    "Pick one: cozy night in, spontaneous drive, or somewhere quiet with a view? 🚗🌙👇",
+    "Tell me your ideal way to end a long day... music, snacks, or no notifications? 😌👇",
+    "You get one lazy afternoon with zero plans... what are we doing first? ☀️👇",
+    "Be honest... are you the planner or the 'let's see where the night goes' type? 😂👇",
+    "If I texted you 'come over' right now, what would your excuse be? 😏📱👇",
+    "What's your go-to move when you want to disappear from the world for a bit? 👀👇",
+    "Current mood: phone in hand, plans undecided, trouble optional 😌🔥👇",
+]
+
+
+X_CAPTION_STYLE = """
+X CAPTION STYLE:
+- conversational girlfriend-energy captions
+- flirty, warm, playful, and easy to answer
+- designed to make the viewer feel like she is talking directly to them
+- captions should feel like a text message, not an influencer post
+- ask questions about the viewer’s choices, mood, weekend, plans, stories, habits, texting style, routines, or opinions
+- create imagined interaction, like hanging out, relaxing together, taking a drive, watching a movie, sitting by the water, or winding down
+- use natural openers like:
+  - "Be honest..."
+  - "Okay but..."
+  - "Pick one..."
+  - "Tell me..."
+  - "If we were..."
+  - "You get one choice..."
+  - "Current mood..."
+- every X caption should invite a reply
+- every X caption should feel specific to the image mood, setting, outfit, or vibe
+- prefer questions that make the viewer talk about themselves
+- at least 8 of the 10 captions must focus on the viewer, not the creator
+- no more than 2 captions may reference the creator’s appearance, outfit, look, body, pose, or vibe
+- avoid validation-seeking captions
+- avoid captions that only focus on her appearance
+- avoid generic thirst-trap captions
+- do NOT use "rate this", "rate me", "rate this look", "cute or trouble", "can’t stop staring", "can't stop staring", "would you date me", "you vs me", "what was your first thought", "spill it", or "who’s stalking my phone" phrasing
+"""
+
+
+BANNED_PHRASES = [
+    "rate this",
+    "rate me",
+    "rate this look",
+    "cute or trouble",
+    "you vs me",
+    "first thought",
+    "what was your first thought",
+    "can’t stop staring",
+    "can't stop staring",
+    "would you date me",
+    "spill it",
+    "stalking my phone",
+    "who’s stalking my phone",
+    "who's stalking my phone",
+]
+
+
 def encode_image(image_path):
     image_path = Path(image_path)
 
@@ -34,6 +97,77 @@ def safe_json_loads(raw_text, fallback):
         return fallback
 
 
+def normalize_x_caption_response(caption_data):
+    if not isinstance(caption_data, dict):
+        caption_data = {
+            "image_summary": {
+                "scene": "",
+                "outfit": "",
+                "mood": "",
+                "setting": "",
+            },
+            "x": [],
+        }
+
+    x_captions = caption_data.get(
+        "x",
+        [],
+    )
+
+    if not isinstance(x_captions, list):
+        x_captions = []
+
+    cleaned_captions = []
+
+    for caption in x_captions:
+        if not isinstance(caption, str):
+            continue
+
+        cleaned_caption = caption.strip()
+
+        if not cleaned_caption:
+            continue
+
+        caption_lower = cleaned_caption.lower()
+
+        if any(
+            banned_phrase in caption_lower
+            for banned_phrase in BANNED_PHRASES
+        ):
+            continue
+
+        if cleaned_caption not in cleaned_captions:
+            cleaned_captions.append(
+                cleaned_caption
+            )
+
+    for fallback_caption in X_FALLBACK_CAPTIONS:
+        if len(cleaned_captions) >= CAPTION_COUNT:
+            break
+
+        if fallback_caption not in cleaned_captions:
+            cleaned_captions.append(
+                fallback_caption
+            )
+
+    caption_data["x"] = cleaned_captions[:CAPTION_COUNT]
+
+    caption_data.pop(
+        "instagram",
+        None,
+    )
+
+    if "image_summary" not in caption_data:
+        caption_data["image_summary"] = {
+            "scene": "",
+            "outfit": "",
+            "mood": "",
+            "setting": "",
+        }
+
+    return caption_data
+
+
 def generate_social_captions(
     image_path,
     extra_instructions="",
@@ -41,9 +175,9 @@ def generate_social_captions(
     base64_image = encode_image(image_path)
 
     prompt = f"""
-You are creating social media captions for an AI creator/content model.
+You are creating X captions for an AI creator/content model.
 
-Analyze the image and return captions for BOTH Instagram and X.
+Analyze the image and return exactly {CAPTION_COUNT} captions for X only.
 
 GENERAL STYLE:
 - flirty but social-media safe
@@ -60,31 +194,16 @@ GENERAL STYLE:
 - no mention that this is generated
 - avoid sounding like an ad
 
-INSTAGRAM CAPTION STYLE:
-- polished
-- cute
-- flirty but natural
-- lifestyle/content creator vibe
-- should feel like something a real creator would post
-- can be slightly softer and prettier than X
-- should still invite comments sometimes, but not every caption needs to be a question
+{X_CAPTION_STYLE}
 
-X CAPTION STYLE:
-- slightly flirtier than Instagram
-- more interactive
-- designed to spark replies, quotes, and reactions
-- use playful tension and curiosity
-- ask easy-to-answer questions
-- use reply-bait formats like:
-  - "be honest..."
-  - "pick one..."
-  - "what was your first thought?"
-  - "would you..."
-  - "rate this..."
-  - "cute or trouble?"
-  - "you vs me?"
-- captions should feel casual, bold, and reactive
-- every X caption should make the viewer want to reply
+IMPORTANT:
+- You MUST return exactly {CAPTION_COUNT} captions.
+- Do not return fewer than {CAPTION_COUNT}.
+- Every caption must be unique.
+- Every caption must be easy for a follower to answer.
+- Captions should feel like something sent in a casual text conversation.
+- Avoid generic influencer-caption wording.
+- Avoid captions that ask viewers to rate the creator, the outfit, the look, or the vibe.
 
 Extra user instructions:
 {extra_instructions}
@@ -98,14 +217,12 @@ Return ONLY valid JSON in this format:
     "mood": "",
     "setting": ""
   }},
-  "instagram": [
-    "",
-    "",
-    "",
-    "",
-    ""
-  ],
   "x": [
+    "",
+    "",
+    "",
+    "",
+    "",
     "",
     "",
     "",
@@ -136,7 +253,7 @@ Return ONLY valid JSON in this format:
 
     raw_text = response.output_text
 
-    return safe_json_loads(
+    caption_data = safe_json_loads(
         raw_text,
         fallback={
             "image_summary": {
@@ -145,73 +262,26 @@ Return ONLY valid JSON in this format:
                 "mood": "",
                 "setting": "",
             },
-            "instagram": [
-                "Weekend mood unlocked ☀️✨",
-                "Just a little sunshine and confidence 😌💫",
-                "This view felt too good not to share 🌊✨",
-                "Soft smiles, pretty light, good energy 💕",
-                "Some days just need a little extra sparkle ✨",
-            ],
-            "x": [
-                "Be honest... what was the first thing you noticed? 👀✨",
-                "Cute or trouble? Choose carefully 😇😈",
-                "Would you sit next to me or pretend not to stare? 😂👀",
-                "Rate the vibe... but I’m judging your answer 😏✨",
-                "Pick one: the view, the outfit, or the smile? 👀",
-            ],
+            "x": X_FALLBACK_CAPTIONS,
         },
+    )
+
+    return normalize_x_caption_response(
+        caption_data
     )
 
 
 def regenerate_platform_captions(
     image_path,
-    platform,
+    platform="x",
     extra_instructions="",
 ):
     base64_image = encode_image(image_path)
 
-    platform_key = platform.lower()
-
-    if platform_key in ["twitter"]:
-        platform_key = "x"
-
-    if platform_key not in ["instagram", "x"]:
-        platform_key = "instagram"
-
-    if platform_key == "x":
-        platform_style = """
-X CAPTION STYLE:
-- slightly flirtier than Instagram
-- interactive / reply-bait focused
-- designed to spark replies, quotes, and reactions
-- use playful questions
-- use casual, bold, short phrasing
-- use phrases like:
-  - "be honest..."
-  - "pick one..."
-  - "what was your first thought?"
-  - "would you..."
-  - "rate this..."
-  - "cute or trouble?"
-  - "you vs me?"
-- every caption should make the viewer want to reply
-"""
-    else:
-        platform_style = """
-INSTAGRAM CAPTION STYLE:
-- polished
-- cute
-- flirty but natural
-- lifestyle/content creator vibe
-- short and pretty
-- slightly softer than X
-- can invite comments, but should not feel forced
-"""
-
     prompt = f"""
-You are regenerating {platform_key} captions for an AI creator/content model.
+You are regenerating X captions for an AI creator/content model.
 
-Analyze the image and create 5 new {platform_key} captions.
+Analyze the image and create exactly {CAPTION_COUNT} new X captions.
 
 GENERAL STYLE:
 - flirty but social-media safe
@@ -228,7 +298,16 @@ GENERAL STYLE:
 - no mention that this is generated
 - avoid sounding like an ad
 
-{platform_style}
+{X_CAPTION_STYLE}
+
+IMPORTANT:
+- You MUST return exactly {CAPTION_COUNT} captions.
+- Do not return fewer than {CAPTION_COUNT}.
+- Every caption must be unique.
+- Every caption must be easy for a follower to answer.
+- Captions should feel like something sent in a casual text conversation.
+- Avoid generic influencer-caption wording.
+- Avoid captions that ask viewers to rate the creator, the outfit, the look, or the vibe.
 
 Extra user instructions:
 {extra_instructions}
@@ -236,7 +315,12 @@ Extra user instructions:
 Return ONLY valid JSON in this format:
 
 {{
-  "{platform_key}": [
+  "x": [
+    "",
+    "",
+    "",
+    "",
+    "",
     "",
     "",
     "",
@@ -267,29 +351,13 @@ Return ONLY valid JSON in this format:
 
     raw_text = response.output_text
 
-    fallback_captions = {
-        "instagram": [
-            "Weekend mood unlocked ☀️✨",
-            "Just a little sunshine and confidence 😌💫",
-            "This view felt too good not to share 🌊✨",
-            "Soft smiles, pretty light, good energy 💕",
-            "Some days just need a little extra sparkle ✨",
-        ],
-        "x": [
-            "Be honest... what was the first thing you noticed? 👀✨",
-            "Cute or trouble? Choose carefully 😇😈",
-            "Would you sit next to me or pretend not to stare? 😂👀",
-            "Rate the vibe... but I’m judging your answer 😏✨",
-            "Pick one: the view, the outfit, or the smile? 👀",
-        ],
-    }
-
-    return safe_json_loads(
+    caption_data = safe_json_loads(
         raw_text,
         fallback={
-            platform_key: fallback_captions.get(
-                platform_key,
-                fallback_captions["instagram"],
-            )
+            "x": X_FALLBACK_CAPTIONS,
         },
+    )
+
+    return normalize_x_caption_response(
+        caption_data
     )

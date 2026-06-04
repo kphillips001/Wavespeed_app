@@ -182,26 +182,26 @@ def render_gallery_image_grid(
                 )
 
                 with action_col1:
-                    if st.button(
-                        "✨",
-                        key=f"prepare_stage_{page_key}_{image_path}",
-                        help="Prepare for Publishing",
+                    generate_captions_clicked = st.button(
+                        "✍️",
+                        key=f"captions_{safe_image_key}",
+                        help="Generate Captions",
                         use_container_width=True,
+                    )
+
+                if generate_captions_clicked:
+                    with st.spinner(
+                        "Generating captions..."
                     ):
-                        success = move_image_to_staged(
-                            image_path
+                        captions = generate_social_captions(
+                            image_path=image_path,
                         )
 
-                        if success:
-                            st.session_state["save_toast_message"] = (
-                                "✨ Moved image to Staged"
-                            )
-                        else:
-                            st.session_state["save_toast_message"] = (
-                                "⚠️ Staged area is full"
-                            )
+                    st.session_state[
+                        f"captions_{image_path}"
+                    ] = captions
 
-                        st.rerun()
+                    st.rerun()
 
                 with action_col2:
                     if st.button(
@@ -313,7 +313,7 @@ def render_gallery_image_grid(
                 )
 
                 st.caption(
-                    "Ready for captions, reels, and publishing."
+                    "Ready for captions"
                 )
 
                 action_col1, action_col2, action_col3, action_col4, action_col5 = st.columns(
@@ -321,26 +321,28 @@ def render_gallery_image_grid(
                 )
 
                 with action_col1:
-                    if st.button(
+                    generate_captions_clicked = st.button(
                         "✍️",
                         key=f"captions_{safe_image_key}",
                         help="Generate Captions",
                         use_container_width=True,
+                    )
+
+                if generate_captions_clicked:
+
+                    with st.spinner(
+                        "Generating captions..."
                     ):
 
-                        with st.spinner(
-                            "Generating captions..."
-                        ):
+                        captions = generate_social_captions(
+                            image_path=image_path,
+                        )
 
-                            captions = generate_social_captions(
-                                image_path=image_path,
-                            )
+                    st.session_state[
+                        f"captions_{image_path}"
+                    ] = captions
 
-                        st.session_state[
-                            f"captions_{image_path}"
-                        ] = captions
-
-                        st.rerun()
+                    st.rerun()
 
                 with action_col2:
                     if st.button(
@@ -467,69 +469,9 @@ def render_gallery_image_grid(
                 if caption_data:
 
                     with st.expander(
-                        "Generated Captions",
+                        "Generated X Captions",
                         expanded=True,
                     ):
-
-                        st.markdown("### Instagram")
-
-                        instagram_captions = caption_data.get(
-                            "instagram",
-                            []
-                        )
-
-                        selected_ig_caption = ""
-
-                        if instagram_captions:
-
-                            selected_ig_caption = st.radio(
-                                "Select Instagram Caption",
-                                instagram_captions,
-                                key=f"selected_ig_caption_{safe_image_key}",
-                            )
-
-                        else:
-
-                            st.warning(
-                                "No Instagram captions available."
-                            )
-
-                        ig_guidance = st.text_input(
-                            "Instagram guidance",
-                            placeholder="Example: softer, cuter, lake weekend, less flirty...",
-                            key=f"ig_guidance_{safe_image_key}",
-                        )
-
-                        if st.button(
-                            "🔄 Regenerate Instagram Captions",
-                            key=f"regen_ig_{safe_image_key}",
-                            use_container_width=True,
-                        ):
-
-                            with st.spinner(
-                                "Regenerating Instagram captions..."
-                            ):
-
-                                new_ig = regenerate_platform_captions(
-                                    image_path=image_path,
-                                    platform="instagram",
-                                    extra_instructions=ig_guidance,
-                                )
-
-                            caption_data["instagram"] = new_ig.get(
-                                "instagram",
-                                [],
-                            )
-
-                            st.session_state[
-                                f"captions_{image_path}"
-                            ] = caption_data
-
-                            st.rerun()
-
-                        st.markdown("---")
-
-                        st.markdown("### X")
 
                         x_captions = caption_data.get(
                             "x",
@@ -596,10 +538,6 @@ def render_gallery_image_grid(
                             st.session_state[
                                 "publish_review_image"
                             ] = str(image_path)
-
-                            st.session_state[
-                                "publish_review_instagram_caption"
-                            ] = selected_ig_caption
 
                             st.session_state[
                                 "publish_review_x_caption"
