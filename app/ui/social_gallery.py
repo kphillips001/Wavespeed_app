@@ -18,6 +18,14 @@ from app.ui.staging_area import (
     move_image_to_staged,
 )
 
+from app.services.x_publish_service import (
+    publish_to_x,
+)
+
+from app.services.published_image_service import (
+    handle_successful_publish,
+)
+
 
 IMAGES_PER_PAGE = 24
 
@@ -182,26 +190,26 @@ def render_gallery_image_grid(
                 )
 
                 with action_col1:
-                    generate_captions_clicked = st.button(
-                        "✍️",
-                        key=f"captions_{safe_image_key}",
-                        help="Generate Captions",
+                    if st.button(
+                        "📦",
+                        key=f"stage_{safe_image_key}",
+                        help="Move to Staging Area",
                         use_container_width=True,
-                    )
-
-                if generate_captions_clicked:
-                    with st.spinner(
-                        "Generating captions..."
                     ):
-                        captions = generate_social_captions(
-                            image_path=image_path,
+                        success = move_image_to_staged(
+                            image_path
                         )
 
-                    st.session_state[
-                        f"captions_{image_path}"
-                    ] = captions
+                        if success:
+                            st.session_state["save_toast_message"] = (
+                                "📦 Moved image to Staging Area"
+                            )
+                        else:
+                            st.session_state["save_toast_message"] = (
+                                "⚠️ Staging Area is full (10 images max)"
+                            )
 
-                    st.rerun()
+                        st.rerun()
 
                 with action_col2:
                     if st.button(
@@ -478,15 +486,19 @@ def render_gallery_image_grid(
                             []
                         )
 
-                        selected_x_caption = ""
-
                         if x_captions:
 
-                            selected_x_caption = st.radio(
-                                "Select X Caption",
+                            st.markdown("#### Caption Options")
+
+                            for caption_index, caption in enumerate(
                                 x_captions,
-                                key=f"selected_x_caption_{safe_image_key}",
-                            )
+                                start=1,
+                            ):
+                                st.markdown(
+                                    f"**{caption_index}.** {caption}"
+                                )
+
+                                st.markdown("---")
 
                         else:
 
@@ -529,20 +541,115 @@ def render_gallery_image_grid(
 
                         st.markdown("---")
 
-                        if st.button(
-                            "➡ Continue",
-                            key=f"review_selected_captions_{safe_image_key}",
+                        st.markdown("### Publish Targets")
+
+                        publish_main = st.checkbox(
+                            "AvaBlackthorne",
+                            value=True,
+                            key=f"publish_main_{safe_image_key}",
+                        )
+
+                        publish_backup = st.checkbox(
+                            "AvaBlackthorneX",
+                            value=False,
+                            key=f"publish_backup_{safe_image_key}",
+                        )
+
+                        caption_options = [
+                            f"{idx}. {caption}"
+                            for idx, caption in enumerate(
+                                x_captions,
+                                start=1,
+                            )
+                        ]
+
+                        selected_main_caption = None
+                        selected_backup_caption = None
+
+                        if publish_main:
+
+                            selected_main_caption = st.selectbox(
+                                "Caption for AvaBlackthorne",
+                                options=caption_options,
+                                index=0,
+                                key=f"main_caption_{safe_image_key}",
+                            )
+
+                        if publish_backup:
+
+                            selected_backup_caption = st.selectbox(
+                                "Caption for AvaBlackthorneX",
+                                options=caption_options,
+                                index=0,
+                                key=f"backup_caption_{safe_image_key}",
+                            )
+
+                        publish_clicked = st.button(
+                            "🚀 Publish Selected",
+                            key=f"publish_x_{safe_image_key}",
                             use_container_width=True,
-                        ):
+                        )
 
-                            st.session_state[
-                                "publish_review_image"
-                            ] = str(image_path)
+                        if publish_clicked:
 
-                            st.session_state[
-                                "publish_review_x_caption"
-                            ] = selected_x_caption
+                            published_accounts = []
 
-                            st.rerun()
+                            try:
+                                if publish_main and selected_main_caption:
 
+                                    main_caption_text = selected_main_caption.split(
+                                        ". ",
+                                        1,
+                                    )[1]
+
+                                    publish_to_x(
+                                        image_path=image_path,
+                                        caption=main_caption_text,
+                                        account_name="AvaBlackthorne",
+                                    )
+
+                                    published_accounts.append(
+                                        "AvaBlackthorne"
+                                    )
+
+                                if publish_backup and selected_backup_caption:
+
+                                    backup_caption_text = selected_backup_caption.split(
+                                        ". ",
+                                        1,
+                                    )[1]
+
+                                    publish_to_x(
+                                        image_path=image_path,
+                                        caption=backup_caption_text,
+                                        account_name="AvaBlackthorneX",
+                                    )
+
+                                    published_accounts.append(
+                                        "AvaBlackthorneX"
+                                    )
+
+                                if published_accounts:
+
+                                    handle_successful_publish(
+                                        image_path=image_path,
+                                        published_accounts=published_accounts,
+                                    )
+
+                                    st.session_state["save_toast_message"] = (
+                                        "🚀 Published to: "
+                                        + ", ".join(published_accounts)
+                                    )
+
+                                    st.rerun()
+
+                                else:
+                                    st.warning(
+                                        "Select at least one account before publishing."
+                                    )
+
+                            except Exception as error:
+                                st.error(
+                                    f"Publishing failed: {error}"
+                                )
     render_pagination_controls("bottom")
