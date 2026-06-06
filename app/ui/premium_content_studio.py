@@ -64,7 +64,7 @@ def render_premium_prompt_expander():
     if not st.session_state["premium_prompts"]:
         return
 
-    with st.expander("View Generated Premium Prompts", expanded=True):
+    with st.expander("View Generated Premium Prompts", expanded=False):
         prompts_to_delete = []
 
         for index, prompt_data in enumerate(
@@ -105,93 +105,94 @@ def render_premium_prompt_expander():
 
 
 def render_premium_generated_image_gallery(selected_output_dir):
-    if (
-        not st.session_state["premium_generated_images"]
-        or not st.session_state.get("premium_generation_complete", False)
-    ):
-        return
+    return
+    # if (
+    #     not st.session_state["premium_generated_images"]
+    #     or not st.session_state.get("premium_generation_complete", False)
+    # ):
+    #     return
 
-    st.markdown("---")
-    st.subheader("Final Generated Images")
+    # st.markdown("---")
+    # st.subheader("Final Generated Images")
 
-    cols = st.columns(3)
+    # cols = st.columns(3)
 
-    for i, image_item in enumerate(st.session_state["premium_generated_images"]):
-        image_id = image_item.get("id", f"premium_image_{i + 1}")
+    # for i, image_item in enumerate(st.session_state["premium_generated_images"]):
+    #     image_id = image_item.get("id", f"premium_image_{i + 1}")
 
-        with cols[i % 3]:
-            st.image(image_item["url"], use_container_width=True)
+    #     with cols[i % 3]:
+    #         st.image(image_item["url"], use_container_width=True)
 
-            st.checkbox("Discard", key=f"premium_discard_{image_id}")
+    #         st.checkbox("Discard", key=f"premium_discard_{image_id}")
 
-            st.checkbox(
-                "📸 Continue Photoshoot",
-                key=f"premium_photoshoot_{image_id}",
-            )
+    #         st.checkbox(
+    #             "📸 Continue Photoshoot",
+    #             key=f"premium_photoshoot_{image_id}",
+    #         )
 
-            st.checkbox(
-                "📖 Create Story (Coming Soon)",
-                key=f"premium_story_{image_id}",
-                disabled=True,
-            )
+    #         st.checkbox(
+    #             "📖 Create Story (Coming Soon)",
+    #             key=f"premium_story_{image_id}",
+    #             disabled=True,
+    #         )
 
-            with st.expander("Prompt"):
-                st.write(image_item["prompt"])
+    #         with st.expander("Prompt"):
+    #             st.write(image_item["prompt"])
 
-    st.markdown("---")
+    # st.markdown("---")
 
-    discard_ids = []
-    photoshoot_ids = []
+    # discard_ids = []
+    # photoshoot_ids = []
 
-    for image_item in st.session_state["premium_generated_images"]:
-        image_id = image_item.get("id")
+    # for image_item in st.session_state["premium_generated_images"]:
+    #     image_id = image_item.get("id")
 
-        if st.session_state.get(f"premium_discard_{image_id}", False):
-            discard_ids.append(image_id)
+    #     if st.session_state.get(f"premium_discard_{image_id}", False):
+    #         discard_ids.append(image_id)
 
-        if st.session_state.get(f"premium_photoshoot_{image_id}", False):
-            photoshoot_ids.append(image_id)
+    #     if st.session_state.get(f"premium_photoshoot_{image_id}", False):
+    #         photoshoot_ids.append(image_id)
 
-    photoshoot_ids = [
-        image_id
-        for image_id in photoshoot_ids
-        if image_id not in discard_ids
-    ]
+    # photoshoot_ids = [
+    #     image_id
+    #     for image_id in photoshoot_ids
+    #     if image_id not in discard_ids
+    # ]
 
-    button_label = (
-        "🗑️ Discard Selected"
-        if discard_ids
-        else "💾 Save All Images"
-    )
+    # button_label = (
+    #     "🗑️ Discard Selected"
+    #     if discard_ids
+    #     else "💾 Save All Images"
+    # )
 
-    if st.button(button_label, use_container_width=True):
-        if discard_ids:
-            st.session_state["premium_generated_images"] = [
-                img
-                for img in st.session_state["premium_generated_images"]
-                if img["id"] not in discard_ids
-            ]
+    # if st.button(button_label, use_container_width=True):
+    #     if discard_ids:
+    #         st.session_state["premium_generated_images"] = [
+    #             img
+    #             for img in st.session_state["premium_generated_images"]
+    #             if img["id"] not in discard_ids
+    #         ]
 
-            st.session_state["save_toast_message"] = (
-                f"🗑️ Discarded {len(discard_ids)} premium image(s)"
-            )
+    #         st.session_state["save_toast_message"] = (
+    #             f"🗑️ Discarded {len(discard_ids)} premium image(s)"
+    #         )
 
-            st.rerun()
+    #         st.rerun()
 
-        else:
-            st.session_state["save_toast_message"] = (
-                f"✅ Saved {len(st.session_state['premium_generated_images'])} premium image(s). "
-                f"📸 Sent {len(photoshoot_ids)} premium image(s) to Photoshoot."
-            )
+    #     else:
+    #         st.session_state["save_toast_message"] = (
+    #             f"✅ Saved {len(st.session_state['premium_generated_images'])} premium image(s). "
+    #             f"📸 Sent {len(photoshoot_ids)} premium image(s) to Photoshoot."
+    #         )
 
-            st.session_state["save_toast_time"] = time.time()
+    #         st.session_state["save_toast_time"] = time.time()
 
-            st.session_state["premium_generated_images"] = []
-            st.session_state["premium_failed_images"] = []
-            st.session_state["premium_prompts"] = []
-            st.session_state["premium_generation_complete"] = False
+    #         st.session_state["premium_generated_images"] = []
+    #         st.session_state["premium_failed_images"] = []
+    #         st.session_state["premium_prompts"] = []
+    #         st.session_state["premium_generation_complete"] = False
 
-            st.rerun()
+    #         st.rerun()
 
 
 def render_premium_content_studio(selected_output_dir):
@@ -666,6 +667,17 @@ def render_premium_content_studio(selected_output_dir):
         st.session_state.get("premium_generation_complete", False)
         and st.session_state.get("premium_generated_images")
     ):
+        open_premium_gallery_clicked = st.button(
+            "🖼 Open Premium Gallery",
+            use_container_width=True,
+            key="open_premium_gallery_after_generation",
+        )
+
+        if open_premium_gallery_clicked:
+            st.session_state["show_premium_gallery"] = True
+            st.session_state["show_premium_photoshoot_queue"] = False
+            st.rerun()
+
         return True
 
     return False

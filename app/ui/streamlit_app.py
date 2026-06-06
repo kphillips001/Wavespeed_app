@@ -440,7 +440,6 @@ if "show_premium_studio" not in st.session_state:
     st.session_state["show_premium_studio"] = False
 
 
-
 # -----------------------------
 # SIDEBAR
 # -----------------------------
