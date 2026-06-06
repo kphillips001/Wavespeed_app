@@ -27,13 +27,41 @@ WAN_27_IMAGE_EDIT_MODEL = {
     "endpoint": "https://api.wavespeed.ai/api/v3/alibaba/wan-2.7/image-edit",
 }
 
+SEEDREAM_45_EDIT_MODEL = {
+    "name": "Seedream 4.5 Edit",
+    "endpoint": "https://api.wavespeed.ai/api/v3/bytedance/seedream-v4.5/edit",
+}
+
 SEEDREAM_50_LITE_EDIT_MODEL = {
     "name": "Seedream 5.0 Lite Edit",
     "endpoint": "https://api.wavespeed.ai/api/v3/bytedance/seedream-v5.0-lite/edit",
 }
 
 
+PREMIUM_RENDERER_MODELS = {
+    WAN_27_IMAGE_EDIT_MODEL["name"]: WAN_27_IMAGE_EDIT_MODEL,
+    SEEDREAM_45_EDIT_MODEL["name"]: SEEDREAM_45_EDIT_MODEL,
+    SEEDREAM_50_LITE_EDIT_MODEL["name"]: SEEDREAM_50_LITE_EDIT_MODEL,
+}
+
+
 def save_uploaded_reference_to_temp(uploaded_file):
+    if isinstance(uploaded_file, (str, Path)):
+        source_path = Path(uploaded_file)
+
+        if not source_path.exists():
+            raise FileNotFoundError(
+                f"Reference image not found: {source_path}"
+            )
+
+        suffix = source_path.suffix or ".png"
+
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp_file:
+            with open(source_path, "rb") as source_file:
+                temp_file.write(source_file.read())
+
+            return temp_file.name
+
     suffix = Path(uploaded_file.name).suffix or ".png"
 
     with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp_file:
@@ -51,6 +79,13 @@ def download_premium_image(image_url, output_path):
 
     with open(output_path, "wb") as file:
         file.write(response.content)
+
+
+def get_premium_renderer_model(premium_renderer):
+    return PREMIUM_RENDERER_MODELS.get(
+        premium_renderer,
+        WAN_27_IMAGE_EDIT_MODEL,
+    )
 
 
 def generate_premium_images(
@@ -99,6 +134,10 @@ def generate_premium_images(
         premium_prompts
     )
 
+    selected_model = get_premium_renderer_model(
+        premium_renderer
+    )
+
     try:
         if progress_callback:
             progress_callback(
@@ -134,17 +173,15 @@ def generate_premium_images(
                 progress_callback(
                     index - 1,
                     total_prompts,
-                    f"Generating premium image {index} of {total_prompts}...",
+                    (
+                        f"Generating premium image {index} of "
+                        f"{total_prompts} with {selected_model['name']}..."
+                    ),
                     generated_images,
                     failed_images,
                 )
 
             try:
-                if premium_renderer == "Seedream 5.0 Lite Edit":
-                    selected_model = SEEDREAM_50_LITE_EDIT_MODEL
-                else:
-                    selected_model = WAN_27_IMAGE_EDIT_MODEL
-
                 request_id = submit_wavespeed_task(
                     prompt=prompt_text,
                     image_url=reference_url,
@@ -178,6 +215,7 @@ def generate_premium_images(
                         "url": str(local_image_path),
                         "source_url": output_url,
                         "local_path": str(local_image_path),
+                        "renderer": selected_model["name"],
                         "status": "completed",
                     }
                 )
@@ -187,6 +225,7 @@ def generate_premium_images(
                     {
                         "id": f"premium_image_{index}",
                         "prompt": prompt_text,
+                        "renderer": selected_model["name"],
                         "error": str(error),
                         "status": "failed",
                     }

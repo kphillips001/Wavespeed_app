@@ -229,269 +229,323 @@ def render_premium_content_studio(selected_output_dir):
 
     active_premium_reference_image = selected_reference_image
 
+    has_premium_reference_image = active_premium_reference_image is not None
+
+    if not has_premium_reference_image:
+        st.markdown(
+            """
+            <p style="
+                color:#dc2626;
+                font-weight:600;
+                margin-bottom:0;
+            ">
+            ⚠️ Reference Image Must Be Selected before continuing.
+            </p>
+            """,
+            unsafe_allow_html=True,
+        )
+
     st.markdown("---")
 
-    st.subheader("Creative Tags")
+    with st.expander(
+        "🎨 Creative Director",
+        expanded=False,
+    ):
+        st.subheader("Creative Tags")
 
-    st.caption(
-        "Enter simple ideas first. Then enhance them into premium-ready tags."
-    )
+        st.caption(
+            "Enter simple ideas first. Then enhance them into premium-ready tags."
+        )
 
     # -----------------------------
     # TAG SESSION STATE
     # -----------------------------
 
-    if "premium_enhanced_tags_value" not in st.session_state:
-        st.session_state["premium_enhanced_tags_value"] = ""
+        if "premium_enhanced_tags_value" not in st.session_state:
+            st.session_state["premium_enhanced_tags_value"] = ""
 
-    if "premium_surprise_tags_value" not in st.session_state:
-        st.session_state["premium_surprise_tags_value"] = ""
+        if "premium_surprise_tags_value" not in st.session_state:
+            st.session_state["premium_surprise_tags_value"] = ""
 
-    if "premium_tags_have_been_enhanced" not in st.session_state:
-        st.session_state["premium_tags_have_been_enhanced"] = False
+        if "premium_tags_have_been_enhanced" not in st.session_state:
+            st.session_state["premium_tags_have_been_enhanced"] = False
 
-    if "premium_tags_have_been_surprised" not in st.session_state:
-        st.session_state["premium_tags_have_been_surprised"] = False
+        if "premium_tags_have_been_surprised" not in st.session_state:
+            st.session_state["premium_tags_have_been_surprised"] = False
 
-    if "premium_selected_tag_source" not in st.session_state:
-        st.session_state["premium_selected_tag_source"] = "Original Tags"
+        if "premium_selected_tag_source" not in st.session_state:
+            st.session_state["premium_selected_tag_source"] = "Original Tags"
 
-    # -----------------------------
-    # ORIGINAL TAGS
-    # -----------------------------
+        if "premium_prompt_count" not in st.session_state:
+            st.session_state["premium_prompt_count"] = 10
 
-    premium_user_tags = st.text_area(
-        label="Original Creative Tags",
-        key="premium_creative_tags",
-        placeholder="Example: nude, night, pool",
-        height=90,
-    )
+        # -----------------------------
+        # ORIGINAL TAGS
+        # -----------------------------
 
-    enhance_button_label = (
-        "🔁 Re-Enhance Tags"
-        if st.session_state["premium_tags_have_been_enhanced"]
-        else "✨ Enhance Tags"
-    )
-
-    surprise_button_label = (
-        "🎲 Surprise Me Again"
-        if st.session_state["premium_tags_have_been_surprised"]
-        else "🎲 Surprise Me"
-    )
-
-    tag_action_col1, tag_action_col2 = st.columns(2)
-
-    with tag_action_col1:
-        enhance_tags_clicked = st.button(
-            enhance_button_label,
-            use_container_width=True,
-            disabled=not premium_user_tags.strip(),
+        premium_user_tags = st.text_area(
+            label="Original Creative Tags",
+            key="premium_creative_tags",
+            placeholder="Example: nude, night, pool",
+            height=90,
         )
 
-    with tag_action_col2:
-        surprise_tags_clicked = st.button(
-            surprise_button_label,
-            use_container_width=True,
-            disabled=not premium_user_tags.strip(),
+        enhance_button_label = (
+            "🔁 Re-Enhance Tags"
+            if st.session_state["premium_tags_have_been_enhanced"]
+            else "✨ Enhance Tags"
         )
 
-    # -----------------------------
-    # ENHANCE TAGS
-    # -----------------------------
+        surprise_button_label = (
+            "🎲 Surprise Me Again"
+            if st.session_state["premium_tags_have_been_surprised"]
+            else "🎲 Surprise Me"
+        )
 
-    if enhance_tags_clicked:
-        with st.spinner("Enhancing premium tags with Grok..."):
-            enhanced_tags = enhance_premium_tags(
-                simple_tags=premium_user_tags,
+        tag_action_col1, tag_action_col2 = st.columns(2)
+
+        with tag_action_col1:
+            enhance_tags_clicked = st.button(
+                enhance_button_label,
+                use_container_width=True,
+                disabled=not premium_user_tags.strip(),
             )
 
-        st.session_state["premium_enhanced_tags_value"] = enhanced_tags
-        st.session_state["premium_enhanced_tags_input"] = enhanced_tags
-        st.session_state["premium_tags_have_been_enhanced"] = True
-        st.session_state["premium_selected_tag_source"] = "Enhanced Tags"
-
-        st.success("Enhanced tags created.")
-        st.rerun()
-
-    # -----------------------------
-    # SURPRISE TAGS
-    # -----------------------------
-
-    if surprise_tags_clicked:
-        with st.spinner("Creating surprise premium tags with Grok..."):
-            surprise_tags = surprise_premium_tags(
-                simple_tags=premium_user_tags,
+        with tag_action_col2:
+            surprise_tags_clicked = st.button(
+                surprise_button_label,
+                use_container_width=True,
+                disabled=not premium_user_tags.strip(),
             )
 
-        st.session_state["premium_surprise_tags_value"] = surprise_tags
-        st.session_state["premium_surprise_tags_input"] = surprise_tags
-        st.session_state["premium_tags_have_been_surprised"] = True
-        st.session_state["premium_selected_tag_source"] = "Surprise Me Tags"
+        # -----------------------------
+        # ENHANCE TAGS
+        # -----------------------------
 
-        st.success("Surprise tags created.")
-        st.rerun()
+        if enhance_tags_clicked:
+            with st.spinner("Enhancing premium tags with Grok..."):
+                enhanced_tags = enhance_premium_tags(
+                    simple_tags=premium_user_tags,
+                )
 
-    # -----------------------------
-    # ENHANCED TAG BOX
-    # -----------------------------
+            st.session_state["premium_enhanced_tags_value"] = enhanced_tags
+            st.session_state["premium_enhanced_tags_input"] = enhanced_tags
+            st.session_state["premium_tags_have_been_enhanced"] = True
+            st.session_state["premium_selected_tag_source"] = "Enhanced Tags"
 
-    premium_enhanced_tags = st.text_area(
-        label="Enhanced Premium Tags",
-        value=st.session_state["premium_enhanced_tags_value"],
-        key="premium_enhanced_tags_input",
-        placeholder="Enhanced premium tags will appear here...",
-        height=90,
-    )
+            st.success("Enhanced tags created.")
+            st.rerun()
 
-    st.session_state["premium_enhanced_tags_value"] = premium_enhanced_tags
+        # -----------------------------
+        # SURPRISE TAGS
+        # -----------------------------
 
-    # -----------------------------
-    # SURPRISE TAG BOX
-    # -----------------------------
+        if surprise_tags_clicked:
+            with st.spinner("Creating surprise premium tags with Grok..."):
+                surprise_tags = surprise_premium_tags(
+                    simple_tags=premium_user_tags,
+                )
 
-    premium_surprise_tags = st.text_area(
-        label="Surprise Me Tags",
-        value=st.session_state["premium_surprise_tags_value"],
-        key="premium_surprise_tags_input",
-        placeholder="Surprise Me tags will appear here...",
-        height=90,
-    )
+            st.session_state["premium_surprise_tags_value"] = surprise_tags
+            st.session_state["premium_surprise_tags_input"] = surprise_tags
+            st.session_state["premium_tags_have_been_surprised"] = True
+            st.session_state["premium_selected_tag_source"] = "Surprise Me Tags"
 
-    st.session_state["premium_surprise_tags_value"] = premium_surprise_tags
+            st.success("Surprise tags created.")
+            st.rerun()
 
-    # -----------------------------
-    # TAG SOURCE SELECTION
-    # -----------------------------
+        # -----------------------------
+        # ENHANCED TAG BOX
+        # -----------------------------
 
-    selected_tag_source = st.radio(
-        "Choose tags to send to Grok",
-        options=[
-            "Original Tags",
-            "Enhanced Tags",
-            "Surprise Me Tags",
-        ],
-        key="premium_selected_tag_source",
-        horizontal=True,
-    )
+        premium_enhanced_tags = st.text_area(
+            label="Enhanced Premium Tags",
+            value=st.session_state["premium_enhanced_tags_value"],
+            key="premium_enhanced_tags_input",
+            placeholder="Enhanced premium tags will appear here...",
+            height=90,
+        )
 
-    if selected_tag_source == "Original Tags":
-        tags_for_prompt_generation = premium_user_tags.strip()
+        st.session_state["premium_enhanced_tags_value"] = premium_enhanced_tags
 
-    elif selected_tag_source == "Enhanced Tags":
-        tags_for_prompt_generation = st.session_state[
-            "premium_enhanced_tags_value"
-        ].strip()
+        # -----------------------------
+        # SURPRISE TAG BOX
+        # -----------------------------
 
-    elif selected_tag_source == "Surprise Me Tags":
-        tags_for_prompt_generation = st.session_state[
-            "premium_surprise_tags_value"
-        ].strip()
+        premium_surprise_tags = st.text_area(
+            label="Surprise Me Tags",
+            value=st.session_state["premium_surprise_tags_value"],
+            key="premium_surprise_tags_input",
+            placeholder="Surprise Me tags will appear here...",
+            height=90,
+        )
 
-    else:
-        tags_for_prompt_generation = ""
+        st.session_state["premium_surprise_tags_value"] = premium_surprise_tags
 
-    if tags_for_prompt_generation:
+        # -----------------------------
+        # TAG SOURCE SELECTION
+        # -----------------------------
+
+        selected_tag_source = st.radio(
+            "Choose tags to send to Grok",
+            options=[
+                "Original Tags",
+                "Enhanced Tags",
+                "Surprise Me Tags",
+            ],
+            key="premium_selected_tag_source",
+            horizontal=True,
+        )
+
+        if selected_tag_source == "Original Tags":
+            tags_for_prompt_generation = premium_user_tags.strip()
+
+        elif selected_tag_source == "Enhanced Tags":
+            tags_for_prompt_generation = st.session_state[
+                "premium_enhanced_tags_value"
+            ].strip()
+
+        elif selected_tag_source == "Surprise Me Tags":
+            tags_for_prompt_generation = st.session_state[
+                "premium_surprise_tags_value"
+            ].strip()
+
+        else:
+            tags_for_prompt_generation = ""
+
+        if tags_for_prompt_generation:
+            st.caption(
+                f"Using {selected_tag_source}: {tags_for_prompt_generation}"
+            )
+        else:
+            st.caption(
+                f"{selected_tag_source} is empty. Select another tag source or generate tags first."
+            )
+
+        # -----------------------------
+        # GET PREMIUM PROMPTS
+        # -----------------------------
+
+        st.markdown("### Number of Prompts")
+
+        premium_prompt_count = st.slider(
+            "Number of Prompts",
+            min_value=1,
+            max_value=25,
+            value=st.session_state["premium_prompt_count"],
+            key="premium_prompt_count",
+            label_visibility="collapsed",
+        )
+
         st.caption(
-            f"Using {selected_tag_source}: {tags_for_prompt_generation}"
-        )
-    else:
-        st.caption(
-            f"{selected_tag_source} is empty. Select another tag source or generate tags first."
+            f"Prompts: {premium_prompt_count}"
         )
 
-    # -----------------------------
-    # GET PREMIUM PROMPTS
-    # -----------------------------
+        prompt_button_col1, prompt_button_col2 = st.columns(2)
 
-    prompt_button_col1, prompt_button_col2 = st.columns(2)
-
-    with prompt_button_col1:
-        get_premium_prompts_clicked = st.button(
-            "✨ Get Premium Prompts",
-            use_container_width=True,
-            disabled=not tags_for_prompt_generation,
-        )
-
-    with prompt_button_col2:
-        get_explicit_prompts_clicked = st.button(
-            "🔥 Get Explicit Prompts",
-            use_container_width=True,
-            disabled=not tags_for_prompt_generation,
-        )
-
-    if get_explicit_prompts_clicked:
-        with st.spinner("Generating bold premium prompts with Grok..."):
-            explicit_prompts = generate_explicit_prompts(
-                creative_tags=tags_for_prompt_generation,
-                prompt_count=10,
+        with prompt_button_col1:
+            get_premium_prompts_clicked = st.button(
+                "✨ Get Premium Prompts",
+                use_container_width=True,
+                disabled=not tags_for_prompt_generation,
             )
 
-        st.session_state["premium_reference_image"] = active_premium_reference_image
-        st.session_state["premium_user_tags"] = premium_user_tags
-        st.session_state["premium_tags_used_for_prompts"] = tags_for_prompt_generation
-        st.session_state["premium_tag_source_used_for_prompts"] = selected_tag_source
-        st.session_state["premium_prompt_mode"] = "explicit"
-
-        st.session_state["premium_prompts"] = [
-            {
-                "id": f"explicit_prompt_{index}",
-                "text": prompt,
-            }
-            for index, prompt in enumerate(
-                explicit_prompts,
-                start=1,
+        with prompt_button_col2:
+            get_explicit_prompts_clicked = st.button(
+                "🔥 Get Explicit Prompts",
+                use_container_width=True,
+                disabled=not tags_for_prompt_generation,
             )
-        ]
 
-        st.session_state["premium_generated_images"] = []
-        st.session_state["premium_failed_images"] = []
-        st.session_state["premium_generation_complete"] = False
+        if get_explicit_prompts_clicked:
+            with st.spinner("Generating bold premium prompts with Grok..."):
+                explicit_prompts = generate_explicit_prompts(
+                    creative_tags=tags_for_prompt_generation,
+                    prompt_count=premium_prompt_count,
+                )
 
-        st.success("Bold premium prompt batch generated.")
+            st.session_state["premium_reference_image"] = active_premium_reference_image
+            st.session_state["premium_user_tags"] = premium_user_tags
+            st.session_state["premium_tags_used_for_prompts"] = tags_for_prompt_generation
+            st.session_state["premium_tag_source_used_for_prompts"] = selected_tag_source
+            st.session_state["premium_prompt_mode"] = "explicit"
 
-    if not active_premium_reference_image:
-        st.caption(
-            "Select or upload a reference image before generating premium images."
+            st.session_state["premium_prompts"] = [
+                {
+                    "id": f"explicit_prompt_{index}",
+                    "text": prompt,
+                }
+                for index, prompt in enumerate(
+                    explicit_prompts,
+                    start=1,
+                )
+            ]
+
+            st.session_state["premium_generated_images"] = []
+            st.session_state["premium_failed_images"] = []
+            st.session_state["premium_generation_complete"] = False
+
+            st.success("Bold premium prompt batch generated.")
+
+        if not active_premium_reference_image:
+            st.caption(
+                "Select or upload a reference image before generating premium images."
+            )
+
+        if get_premium_prompts_clicked:
+            with st.spinner("Generating premium prompts with Grok..."):
+                premium_prompts = generate_premium_prompts(
+                    creative_tags=tags_for_prompt_generation,
+                    prompt_count=premium_prompt_count,
+                )
+
+            st.session_state["premium_reference_image"] = active_premium_reference_image
+            st.session_state["premium_user_tags"] = premium_user_tags
+            st.session_state["premium_tags_used_for_prompts"] = tags_for_prompt_generation
+            st.session_state["premium_tag_source_used_for_prompts"] = selected_tag_source
+            st.session_state["premium_prompt_mode"] = "premium"
+
+            st.session_state["premium_prompts"] = [
+                {
+                    "id": f"premium_prompt_{index}",
+                    "text": prompt,
+                }
+                for index, prompt in enumerate(
+                    premium_prompts,
+                    start=1,
+                )
+            ]
+
+            st.session_state["premium_generated_images"] = []
+            st.session_state["premium_failed_images"] = []
+            st.session_state["premium_generation_complete"] = False
+
+            st.success("Premium prompt batch generated.")
+
+        render_premium_prompt_expander()
+
+    with st.expander(
+        "✍️ Manual Prompt",
+        expanded=False,
+    ):
+
+        manual_prompt = st.text_area(
+            "Prompt",
+            height=250,
+            key="premium_manual_prompt",
+            placeholder=(
+                "Enter your own prompt and bypass "
+                "Creative Director mode."
+            ),
         )
-
-    if get_premium_prompts_clicked:
-        with st.spinner("Generating premium prompts with Grok..."):
-            premium_prompts = generate_premium_prompts(
-                creative_tags=tags_for_prompt_generation,
-                prompt_count=10,
-            )
-
-        st.session_state["premium_reference_image"] = active_premium_reference_image
-        st.session_state["premium_user_tags"] = premium_user_tags
-        st.session_state["premium_tags_used_for_prompts"] = tags_for_prompt_generation
-        st.session_state["premium_tag_source_used_for_prompts"] = selected_tag_source
-        st.session_state["premium_prompt_mode"] = "premium"
-
-        st.session_state["premium_prompts"] = [
-            {
-                "id": f"premium_prompt_{index}",
-                "text": prompt,
-            }
-            for index, prompt in enumerate(
-                premium_prompts,
-                start=1,
-            )
-        ]
-
-        st.session_state["premium_generated_images"] = []
-        st.session_state["premium_failed_images"] = []
-        st.session_state["premium_generation_complete"] = False
-
-        st.success("Premium prompt batch generated.")
-
-    render_premium_prompt_expander()
-
+        
     st.subheader("Premium Renderer")
 
     premium_renderer = st.selectbox(
         "Choose premium render engine",
         options=[
             "WAN 2.7 Image Edit",
+            "Seedream 4.5 Edit",
             "Seedream 5.0 Lite Edit",
         ],
         index=0,
@@ -504,7 +558,10 @@ def render_premium_content_studio(selected_output_dir):
         use_container_width=True,
         disabled=(
             active_premium_reference_image is None
-            or not st.session_state["premium_prompts"]
+            or (
+                not st.session_state["premium_prompts"]
+                and not manual_prompt.strip()
+            )
         ),
     )
 
@@ -560,8 +617,17 @@ def render_premium_content_studio(selected_output_dir):
                                 st.write(image_item["prompt"])
 
         with st.spinner(f"Generating premium images with {premium_renderer}..."):
+            prompts_to_generate = st.session_state["premium_prompts"]
+
+            if manual_prompt.strip():
+                prompts_to_generate = [
+                    {
+                        "id": "manual_prompt",
+                        "text": manual_prompt.strip(),
+                    }
+                ]
             render_results = generate_premium_images(
-                premium_prompts=st.session_state["premium_prompts"],
+                premium_prompts=prompts_to_generate,
                 uploaded_file=active_premium_reference_image,
                 selected_output_dir=selected_output_dir,
                 premium_renderer=premium_renderer,
