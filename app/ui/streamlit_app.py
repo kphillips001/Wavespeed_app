@@ -141,6 +141,10 @@ from app.ui.social_gallery import (
     render_gallery_image_grid,
 )
 
+from app.ui.social_gallery_page import (
+    render_social_gallery_page,
+)
+
 from app.ui.staging_area import (
     render_staging_area,
     render_staging_sidebar_button,
@@ -192,6 +196,10 @@ from app.ui.social_content_studio import (
 
 from app.ui.social_gallery import (
     render_gallery_image_grid,
+)
+
+from app.ui.social_gallery_page import (
+    render_social_gallery_page,
 )
 
 from app.ui.staging_area import (
@@ -720,6 +728,11 @@ if st.sidebar.button(
 # ==========================
 
 if st.session_state.get("show_gallery", False):
+    render_social_gallery_page(
+        selected_output_dir=selected_output_dir,
+    )
+    st.stop()
+
     gallery_root = Path(selected_output_dir)
     photoshoot_root = gallery_root / "Photoshoot"
 

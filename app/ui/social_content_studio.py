@@ -513,3 +513,21 @@ Fresh request ID: {refresh_nonce}
         st.success(
             f"Saved {completed_count} generated image(s) directly to gallery folder."
         )
+
+    if (
+        st.session_state.get("generation_complete", False)
+        and st.session_state.get("generated_images")
+    ):
+        open_content_gallery_clicked = st.button(
+            "Open Content Gallery",
+            use_container_width=True,
+            key="open_content_gallery_after_generation",
+        )
+
+        if open_content_gallery_clicked:
+            st.session_state["show_gallery"] = True
+            st.session_state["show_photoshoot_queue"] = False
+            st.session_state["show_staging_area"] = False
+            st.session_state["active_photoshoot"] = False
+            st.session_state["show_premium_studio"] = False
+            st.rerun()
