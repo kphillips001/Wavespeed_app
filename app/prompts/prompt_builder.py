@@ -1031,6 +1031,55 @@ Every prompt MUST preserve:
 - same body
 - same identity from the reference image
 
+BODY CONSISTENCY LOCK:
+- preserve the exact overall body proportions shown in the reference image
+- preserve the same recognizable body structure
+- preserve the same overall body shape
+- preserve the same overall body weight and physique
+- preserve the same waist-to-hip ratio
+- preserve the same hip width
+- preserve the same thigh thickness
+- preserve the same leg proportions
+- preserve the same shoulder width
+- preserve the same feminine hourglass silhouette
+- preserve realistic anatomy
+- preserve photorealistic body structure
+- maintain healthy feminine curves
+- maintain consistent body proportions across every generated image
+
+BUST CONSISTENCY LOCK:
+- preserve the exact bust size shown in the reference image
+- maintain full natural D-cup breast proportions
+- maintain the exact breast size visible in the reference image
+- preserve full breast volume and projection
+- preserve natural D-cup fullness across every prompt
+- maintain visible breast projection when clothing and pose allow it
+- maintain full upper breast volume
+- maintain full lower breast volume
+- maintain rounded natural breast shape
+- maintain natural cleavage when visible
+- keep bust proportions consistent across every prompt
+
+Do NOT:
+- reduce breast volume
+- reduce breast projection
+- reduce breast fullness
+- make the subject smaller-busted than the reference image
+- flatten the chest
+- make the breasts look like a small B cup
+- change body weight
+- change waist size
+- change hip size
+- change thigh thickness
+- change shoulder width
+- change overall body proportions
+- change chest-to-waist proportions
+- change bust-to-waist proportions
+- alter the recognizable silhouette of the reference image
+- exaggerate anatomy
+- create unrealistic proportions
+- create artificial body distortion
+
 {universal_style}
 
 {creative_director_rules}
