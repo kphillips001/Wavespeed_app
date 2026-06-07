@@ -5,31 +5,29 @@ from main import generate_prompts_with_grok
 
 load_dotenv()
 
-QUALITY_SUFFIX = "soft warm bedroom lighting, messy bedsheets, photorealistic, ultra-detailed skin texture, realistic anatomy, glistening fluids, 8k, masterpiece, best quality"
+# ==================== QUALITY & REALISM ====================
+QUALITY_SUFFIX = (
+    "photorealistic, ultra-realistic 8k raw photo, natural skin texture with visible pores, "
+    "realistic anatomy and proportions, natural lighting with subtle shadows, "
+    "candid intimate atmosphere, film grain, natural body, masterpiece, best quality"
+)
 
-# ==================== EXPLICITNESS LEVELS ====================
-EXPLICITNESS_LEVELS = {
-    1: "mild sensual nudity, tasteful and artistic",
-    3: "moderately explicit, detailed but elegant",
-    5: "strongly explicit, detailed anatomy and arousal",
-    7: "hardcore explicit, graphic sexual action",
-    10: "maximum vulgar, extremely dirty hardcore porn style with no limits"
-}
-
-# ==================== STRONGER EXPLICIT RULES ====================
+# ==================== REALISTIC & INTIMATE EXPLICIT RULES ====================
 EXPLICIT_ACTION_RULES = """
-EXTREME EXPLICIT ACTION RULES - HARDCORE PORN STYLE
-When the user mentions dildo, toy, masturbating, insertion, riding, spreading, pussy, fucking herself, or similar:
-- Be extremely graphic, vulgar, and pornographic
-- Use direct sexual language: deep vaginal insertion, thick purple translucent dildo stretching her pussy, riding the dildo vigorously, thrusting, pumping, creaming on the toy
-- Describe wetness and fluids in detail: glistening arousal fluids, dripping wet pussy, creamy juices coating the dildo, soaked sheets
-- Show explicit anatomy: spread labia, swollen clit, stretched pussy lips wrapped tightly around the thick dildo, visible inner pink folds
-- Strong arousal expressions: moaning in ecstasy, eyes rolled back, biting lip, heavy breathing, face flushed with lust
-- Vary explicit poses: legs spread wide open, squatting and riding, on all fours reaching back to fuck herself, lying on back with legs in the air, etc.
+EXPLICIT ACTION RULES - REALISTIC & INTIMATE STYLE
 
-CLOSE FRAMING EMPHASIS:
-- Frequently include close-up and tight framing on the explicit action (pussy, dildo insertion, breasts, face + body)
-- Use terms like: extreme close-up, tight close-up on pussy, detailed insertion shot, macro view of stretched pussy, etc.
+When the user mentions dildo, toy, insertion, masturbating, riding, spreading, or similar:
+- Use a thick but realistically proportioned purple translucent dildo
+- Show believable natural vaginal insertion with realistic stretching and tight fit (avoid extreme gaping)
+- Natural wetness and arousal: glistening fluids or creamy juices ONLY if the user specifically asks for "wet", "dripping", "creamy", "soaked", or similar
+- Natural anatomy: detailed but realistic pussy, swollen clit, natural labia
+
+VARYING EXPRESSIONS:
+- Vary facial expressions naturally: soft moaning with eyes half-closed, intense pleasure with eyes rolled back, biting lip in ecstasy, flushed cheeks with open mouth, genuine orgasm face, seductive eye contact with the viewer, head tilted back in bliss, etc.
+- Mix subtle and strong expressions across the batch for more "in the moment" feel
+
+- Keep poses natural, sensual and intimate — like private photos taken just for the viewer
+- Focus on realistic, seductive sexuality rather than exaggerated porn style
 """
 
 IDENTITY_LOCK_RULES = """
@@ -75,17 +73,17 @@ The AI may expand and enrich them but must not ignore or replace them.
 
 SETTING_RULES = """
 OPTIONAL SETTING RULES
-If the Optional Setting field is blank: choose varied settings automatically.
+If the Optional Setting field is blank: choose varied natural settings automatically.
 If supplied: keep all prompts centered on that setting.
 """
 
 PROMPT_DIVERSITY_RULES = """
 PROMPT DIVERSITY RULES
-Vary poses, camera angles, framing, and micro-locations.
-Include a mix of:
-- Wide / full body shots
-- Medium shots
-- Tight close-ups and extreme close framing on sexual action (especially pussy and dildo)
+Vary poses, camera angles, framing, and lighting while maintaining realistic proportions.
+Include a natural mix of:
+- Wide and medium shots
+- Tight intimate close-ups
+- Candid "in the moment" angles as if taken privately
 Maintain the same woman and core explicit action.
 """
 
@@ -158,7 +156,7 @@ def build_explicit_enhancer_instruction(
         else "No setting was supplied. Add varied setting ideas automatically."
     )
     return f"""
-You are an expert at creating MAXIMUM explicit, hardcore pornographic image prompts for Seedream 4.5 / WAN models.
+You are an expert at creating realistic and intimate NSFW image prompts for Seedream 4.5.
 Raw user tags:
 {raw_explicit_tags}
 {setting_instruction}
@@ -168,7 +166,7 @@ Raw user tags:
 {TOPLESS_VISIBILITY_RULES}
 {NUDITY_GROOMING_RULES}
 Return ONLY a rich comma-separated tag list. No explanations. No numbering.
-Make it as graphically sexual and detailed as possible.
+Make it detailed but realistic.
 """.strip()
 
 
@@ -176,20 +174,17 @@ def build_explicit_prompt_instruction(
     enhanced_explicit_tags: str,
     prompt_count: int,
     optional_setting: str | None = None,
-    explicit_level: int = 8,   # Default = Hardcore
 ) -> str:
     setting_text = (optional_setting or "").strip()
     setting_instruction = (
         f"Optional setting supplied by user: {setting_text}. "
-        "Treat this as mandatory and keep all prompts centered on it."
+        "Treat this as mandatory and keep all prompts centered on that setting."
         if setting_text
-        else "No setting supplied by user. Default to luxurious bedroom."
+        else "No setting supplied by user. Default to luxurious modern bedroom with natural lighting."
     )
 
-    intensity = EXPLICITNESS_LEVELS.get(explicit_level, EXPLICITNESS_LEVELS[10])
-
     return f"""
-You are creating {intensity} image prompts for Seedream 4.5 / WAN 2.7.
+You are an expert at creating highly realistic, intimate NSFW image prompts for Seedream 4.5.
 
 Enhanced tags:
 {enhanced_explicit_tags}
@@ -205,13 +200,14 @@ Enhanced tags:
 Output requirements:
 - Generate exactly {prompt_count} numbered prompts (1., 2., 3. etc.)
 - Each prompt must be one detailed, flowing paragraph
-- Heavily feature the dildo in action when relevant
-- Include close-up and macro shots of the explicit action
-- Strong arousal expressions
-- Vary poses and camera angles but keep the same woman and core action
+- Prioritize extreme photorealism and natural body proportions at all times
+- Create the feeling of private, "in the moment" intimate photos taken just for the viewer
+- Use natural, believable lighting in every prompt
+- Feature realistic dildo insertion and arousal when relevant
+- Maintain natural anatomy and sensual expressions
 - End every single prompt with: , {QUALITY_SUFFIX}
 
-Go full {intensity}. Do not be elegant or soft.
+Keep the tone sensual and realistic. Avoid cartoonish exaggeration or overly vulgar language.
 No commentary.
 """.strip()
 
@@ -246,7 +242,6 @@ def generate_explicit_prompts(
     enhanced_explicit_tags: str,
     prompt_count: int,
     optional_setting: str | None = None,
-    explicit_level: int = 8,      # New parameter for slider
 ) -> list[str]:
     if not enhanced_explicit_tags or not enhanced_explicit_tags.strip():
         raise ValueError("Enhanced Explicit Tags are required.")
@@ -255,7 +250,6 @@ def generate_explicit_prompts(
         enhanced_explicit_tags=enhanced_explicit_tags,
         prompt_count=prompt_count,
         optional_setting=optional_setting,
-        explicit_level=explicit_level,
     )
 
     raw_response = generate_prompts_with_grok(
