@@ -7,11 +7,16 @@ import streamlit as st
 
 from app.services.premium_director_service import (
     generate_premium_prompts,
-    generate_explicit_prompts,
+    generate_explicit_prompts as generate_bold_premium_prompts,
 )
 
 from app.services.premium_render_service import (
     generate_premium_images,
+)
+
+from app.services.explicit_prompt_service import (
+    enhance_explicit_tags,
+    generate_explicit_prompts as generate_enhanced_explicit_prompts,
 )
 
 from app.services.premium_tag_enhancer_service import (
@@ -268,11 +273,17 @@ def render_premium_content_studio(selected_output_dir):
         if "premium_surprise_tags_value" not in st.session_state:
             st.session_state["premium_surprise_tags_value"] = ""
 
+        if "premium_enhanced_explicit_tags_value" not in st.session_state:
+            st.session_state["premium_enhanced_explicit_tags_value"] = ""
+
         if "premium_tags_have_been_enhanced" not in st.session_state:
             st.session_state["premium_tags_have_been_enhanced"] = False
 
         if "premium_tags_have_been_surprised" not in st.session_state:
             st.session_state["premium_tags_have_been_surprised"] = False
+
+        if "premium_explicit_tags_have_been_enhanced" not in st.session_state:
+            st.session_state["premium_explicit_tags_have_been_enhanced"] = False
 
         if "premium_selected_tag_source" not in st.session_state:
             st.session_state["premium_selected_tag_source"] = "Original Tags"
@@ -291,6 +302,22 @@ def render_premium_content_studio(selected_output_dir):
             height=90,
         )
 
+        premium_explicit_tags = st.text_area(
+            label="Explicit Tags",
+            key="premium_explicit_tags",
+            placeholder="Enter explicit/adult concepts to preserve as mandatory anchors...",
+            height=90,
+        )
+
+        premium_explicit_optional_setting = st.text_input(
+            label="Optional Setting",
+            key="premium_explicit_optional_setting",
+            placeholder=(
+                "Optional: rooftop, club bathroom, hotel suite, dark alley. "
+                "Leave blank for varied settings."
+            ),
+        )
+
         enhance_button_label = (
             "🔁 Re-Enhance Tags"
             if st.session_state["premium_tags_have_been_enhanced"]
@@ -303,7 +330,13 @@ def render_premium_content_studio(selected_output_dir):
             else "🎲 Surprise Me"
         )
 
-        tag_action_col1, tag_action_col2 = st.columns(2)
+        explicit_enhance_button_label = (
+            "Re-Enhance Explicit Tags"
+            if st.session_state["premium_explicit_tags_have_been_enhanced"]
+            else "Enhance Explicit Tags"
+        )
+
+        tag_action_col1, tag_action_col2, tag_action_col3 = st.columns(3)
 
         with tag_action_col1:
             enhance_tags_clicked = st.button(
@@ -317,6 +350,13 @@ def render_premium_content_studio(selected_output_dir):
                 surprise_button_label,
                 use_container_width=True,
                 disabled=not premium_user_tags.strip(),
+            )
+
+        with tag_action_col3:
+            enhance_explicit_tags_clicked = st.button(
+                explicit_enhance_button_label,
+                use_container_width=True,
+                disabled=not premium_explicit_tags.strip(),
             )
 
         # -----------------------------
@@ -356,6 +396,25 @@ def render_premium_content_studio(selected_output_dir):
             st.rerun()
 
         # -----------------------------
+        # ENHANCE EXPLICIT TAGS
+        # -----------------------------
+
+        if enhance_explicit_tags_clicked:
+            with st.spinner("Enhancing explicit tags with Grok..."):
+                enhanced_explicit_tags = enhance_explicit_tags(
+                    raw_explicit_tags=premium_explicit_tags,
+                    optional_setting=premium_explicit_optional_setting,
+                )
+
+            st.session_state["premium_enhanced_explicit_tags_value"] = enhanced_explicit_tags
+            st.session_state["premium_enhanced_explicit_tags_input"] = enhanced_explicit_tags
+            st.session_state["premium_explicit_tags_have_been_enhanced"] = True
+            st.session_state["premium_selected_tag_source"] = "Enhanced Explicit Tags"
+
+            st.success("Enhanced explicit tags created.")
+            st.rerun()
+
+        # -----------------------------
         # ENHANCED TAG BOX
         # -----------------------------
 
@@ -365,6 +424,7 @@ def render_premium_content_studio(selected_output_dir):
             key="premium_enhanced_tags_input",
             placeholder="Enhanced premium tags will appear here...",
             height=90,
+            disabled=True,
         )
 
         st.session_state["premium_enhanced_tags_value"] = premium_enhanced_tags
@@ -379,9 +439,27 @@ def render_premium_content_studio(selected_output_dir):
             key="premium_surprise_tags_input",
             placeholder="Surprise Me tags will appear here...",
             height=90,
+            disabled=True,
         )
 
         st.session_state["premium_surprise_tags_value"] = premium_surprise_tags
+
+        # -----------------------------
+        # ENHANCED EXPLICIT TAG BOX
+        # -----------------------------
+
+        premium_enhanced_explicit_tags = st.text_area(
+            label="Enhanced Explicit Tags",
+            value=st.session_state["premium_enhanced_explicit_tags_value"],
+            key="premium_enhanced_explicit_tags_input",
+            placeholder="Enhanced explicit tags will appear here...",
+            height=90,
+            disabled=True,
+        )
+
+        st.session_state[
+            "premium_enhanced_explicit_tags_value"
+        ] = premium_enhanced_explicit_tags
 
         # -----------------------------
         # TAG SOURCE SELECTION
@@ -393,6 +471,7 @@ def render_premium_content_studio(selected_output_dir):
                 "Original Tags",
                 "Enhanced Tags",
                 "Surprise Me Tags",
+                "Enhanced Explicit Tags",
             ],
             key="premium_selected_tag_source",
             horizontal=True,
@@ -409,6 +488,11 @@ def render_premium_content_studio(selected_output_dir):
         elif selected_tag_source == "Surprise Me Tags":
             tags_for_prompt_generation = st.session_state[
                 "premium_surprise_tags_value"
+            ].strip()
+
+        elif selected_tag_source == "Enhanced Explicit Tags":
+            tags_for_prompt_generation = st.session_state[
+                "premium_enhanced_explicit_tags_value"
             ].strip()
 
         else:
@@ -442,7 +526,11 @@ def render_premium_content_studio(selected_output_dir):
             f"Prompts: {premium_prompt_count}"
         )
 
-        prompt_button_col1, prompt_button_col2 = st.columns(2)
+        enhanced_explicit_tags_for_prompt = st.session_state[
+            "premium_enhanced_explicit_tags_value"
+        ].strip()
+
+        prompt_button_col1, prompt_button_col2, prompt_button_col3 = st.columns(3)
 
         with prompt_button_col1:
             get_premium_prompts_clicked = st.button(
@@ -455,20 +543,28 @@ def render_premium_content_studio(selected_output_dir):
             get_explicit_prompts_clicked = st.button(
                 "🔥 Get Explicit Prompts",
                 use_container_width=True,
+                disabled=not enhanced_explicit_tags_for_prompt,
+            )
+
+        with prompt_button_col3:
+            get_bold_premium_prompts_clicked = st.button(
+                "Get Bold Premium Prompts",
+                use_container_width=True,
                 disabled=not tags_for_prompt_generation,
             )
 
         if get_explicit_prompts_clicked:
-            with st.spinner("Generating bold premium prompts with Grok..."):
-                explicit_prompts = generate_explicit_prompts(
-                    creative_tags=tags_for_prompt_generation,
+            with st.spinner("Generating explicit prompts with Grok..."):
+                explicit_prompts = generate_enhanced_explicit_prompts(
+                    enhanced_explicit_tags=enhanced_explicit_tags_for_prompt,
                     prompt_count=premium_prompt_count,
+                    optional_setting=premium_explicit_optional_setting,
                 )
 
             st.session_state["premium_reference_image"] = active_premium_reference_image
             st.session_state["premium_user_tags"] = premium_user_tags
-            st.session_state["premium_tags_used_for_prompts"] = tags_for_prompt_generation
-            st.session_state["premium_tag_source_used_for_prompts"] = selected_tag_source
+            st.session_state["premium_tags_used_for_prompts"] = enhanced_explicit_tags_for_prompt
+            st.session_state["premium_tag_source_used_for_prompts"] = "Enhanced Explicit Tags"
             st.session_state["premium_prompt_mode"] = "explicit"
 
             st.session_state["premium_prompts"] = [
@@ -478,6 +574,36 @@ def render_premium_content_studio(selected_output_dir):
                 }
                 for index, prompt in enumerate(
                     explicit_prompts,
+                    start=1,
+                )
+            ]
+
+            st.session_state["premium_generated_images"] = []
+            st.session_state["premium_failed_images"] = []
+            st.session_state["premium_generation_complete"] = False
+
+            st.success("Explicit prompt batch generated.")
+
+        if get_bold_premium_prompts_clicked:
+            with st.spinner("Generating bold premium prompts with Grok..."):
+                bold_premium_prompts = generate_bold_premium_prompts(
+                    creative_tags=tags_for_prompt_generation,
+                    prompt_count=premium_prompt_count,
+                )
+
+            st.session_state["premium_reference_image"] = active_premium_reference_image
+            st.session_state["premium_user_tags"] = premium_user_tags
+            st.session_state["premium_tags_used_for_prompts"] = tags_for_prompt_generation
+            st.session_state["premium_tag_source_used_for_prompts"] = selected_tag_source
+            st.session_state["premium_prompt_mode"] = "bold_premium"
+
+            st.session_state["premium_prompts"] = [
+                {
+                    "id": f"bold_premium_prompt_{index}",
+                    "text": prompt,
+                }
+                for index, prompt in enumerate(
+                    bold_premium_prompts,
                     start=1,
                 )
             ]
