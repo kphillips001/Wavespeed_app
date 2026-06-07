@@ -291,6 +291,9 @@ def render_premium_content_studio(selected_output_dir):
         if "premium_prompt_count" not in st.session_state:
             st.session_state["premium_prompt_count"] = 10
 
+        if "premium_explicit_level" not in st.session_state:
+            st.session_state["premium_explicit_level"] = 8  # Default: Hardcore (1-10)
+
         # -----------------------------
         # ORIGINAL TAGS
         # -----------------------------
@@ -526,6 +529,20 @@ def render_premium_content_studio(selected_output_dir):
             f"Prompts: {premium_prompt_count}"
         )
 
+        st.markdown("### Explicitness Level")
+
+        explicit_level = st.slider(
+            "Explicitness Level (1 = Mild → 10 = Maximum Hardcore)",
+            min_value=1,
+            max_value=10,
+            value=st.session_state["premium_explicit_level"],
+            key="premium_explicit_level",
+            help="Controls how graphic, vulgar and explicit the final prompts will be"
+        )
+        st.caption(f"**Level {explicit_level}/10**")
+
+        
+
         enhanced_explicit_tags_for_prompt = st.session_state[
             "premium_enhanced_explicit_tags_value"
         ].strip()
@@ -559,6 +576,7 @@ def render_premium_content_studio(selected_output_dir):
                     enhanced_explicit_tags=enhanced_explicit_tags_for_prompt,
                     prompt_count=premium_prompt_count,
                     optional_setting=premium_explicit_optional_setting,
+                    explicit_level=explicit_level,   # ← New
                 )
 
             st.session_state["premium_reference_image"] = active_premium_reference_image
