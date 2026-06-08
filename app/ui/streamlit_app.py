@@ -56,6 +56,7 @@ from app.prompts.generation_modes import (
 
 from app.prompts.prompt_builder import (
     build_chatgpt_prompt,
+    normalize_social_prompt_continuity,
 )
 
 
@@ -65,8 +66,6 @@ from app.prompts.prompt_builder import (
 
 from app.services.batch_state_service import (
     clear_current_batch_state,
-    load_current_batch_state,
-    save_current_batch_state,
 )
 
 from app.services.instagram_phone_publish_service import (
@@ -292,6 +291,9 @@ These prompts will use a reference image.
 
 Every prompt must preserve:
 - same woman / same identity
+- same face
+- same hair
+- same rich dark tan skin
 - same outfit
 - same setting
 - same environment
@@ -300,6 +302,17 @@ Every prompt must preserve:
 - same personality
 - same visual style
 - same overall aesthetic
+- same full natural D-cup bust
+- same feminine hourglass body
+- same waist-to-hip proportions
+- same visible body size and recognizable body structure from the reference image
+
+Every prompt must explicitly include:
+- rich dark tan skin
+- full natural D-cup bust
+- feminine hourglass body
+- same waist-to-hip proportions
+- close creator-style framing that keeps her body large in frame
 
 {camera_behavior}
 
@@ -502,61 +515,42 @@ if st.sidebar.button(
     st.rerun()
 
 # =====================================
-# RESTORE SAVED BATCH
+# STARTUP SESSION RESET
 # =====================================
 
-if "batch_restored" not in st.session_state:
+if "startup_session_reset_done" not in st.session_state:
 
-    saved_batch = load_current_batch_state()
+    clear_current_batch_state()
 
-    if saved_batch:
+    keys_to_reset = [
+        "generated_prompts",
+        "generated_images",
+        "failed_images",
+        "generation_complete",
+        "generation_status",
+        "review_mode",
+        "discard_happened",
+        "last_saved_folder",
+        "last_user_tags",
+        "last_generation_mode",
+        "last_platform_mode",
+        "last_spice_level",
+        "last_prompt_count",
+        "creative_tags_input_box",
+    ]
 
-        st.session_state["generated_images"] = [
-            {
-                "id": f"image_{i}",
-                "url": image_path,
-                "prompt": prompt_text,
-                "status": "completed",
-            }
-            for i, (image_path, prompt_text)
-            in enumerate(
-                zip(
-                    saved_batch.get(
-                        "generated_image_paths",
-                        []
-                    ),
-                    saved_batch.get(
-                        "generated_prompts",
-                        []
-                    ),
-                ),
-                start=1,
-            )
-        ]
+    for key in keys_to_reset:
+        if key in st.session_state:
+            del st.session_state[key]
 
-        st.session_state["generated_prompts"] = [
-            {
-                "id": f"prompt_{i}",
-                "text": prompt_text,
-            }
-            for i, prompt_text
-            in enumerate(
-                saved_batch.get(
-                    "generated_prompts",
-                    []
-                ),
-                start=1,
-            )
-        ]
-
-        st.session_state["last_user_tags"] = saved_batch.get(
-            "creative_tags",
-            "",
-        )
-
-        st.session_state["generation_complete"] = True
-
-    st.session_state["batch_restored"] = True
+    st.session_state["generated_prompts"] = []
+    st.session_state["generated_images"] = []
+    st.session_state["failed_images"] = []
+    st.session_state["generation_complete"] = False
+    st.session_state["generation_status"] = ""
+    st.session_state["creative_tags_input_box"] = ""
+    st.session_state["last_user_tags"] = ""
+    st.session_state["startup_session_reset_done"] = True
 
 # =====================================
 # CREATIVE DIRECTOR
@@ -1176,6 +1170,12 @@ if (
                         photoshoot_meta_prompt,
                         grok_key,
                     )
+
+                    photoshoot_prompts = [
+                        normalize_social_prompt_continuity(prompt)
+                        for prompt in photoshoot_prompts
+                        if str(prompt).strip()
+                    ]
 
                     with st.spinner("Uploading photoshoot reference image..."):
 

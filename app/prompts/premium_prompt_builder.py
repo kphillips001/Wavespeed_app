@@ -52,7 +52,7 @@ Every prompt MUST preserve:
 - same face
 - same hair
 - same identity from the reference image
-- same general skin tone
+- same general skin tone, with a rich dark tan
 - same creator aesthetic
 - same overall attractiveness
 - same recognizable body structure
@@ -62,11 +62,19 @@ Body Preservation Rules:
 - maintain realistic anatomy
 - maintain feminine proportions
 - maintain healthy curves
+- maintain a nice dark tan across the visible skin
 - preserve photorealistic body structure
 - preserve recognizable body shape
 - avoid exaggerated anatomy
 - avoid unrealistic proportions
 - avoid artificial body distortion
+
+Skin Tone Rules:
+- every final prompt must explicitly include rich dark tan skin
+- preserve the same rich dark tan across face, chest, arms, waist, hips, and legs when visible
+- keep the tan natural, even, sun-kissed, and photorealistic
+- do not make her pale, red-haired, washed out, or fair-skinned
+- do not change her underlying identity or facial features while emphasizing the dark tan
 
 Bust Consistency Rules:
 - preserve the exact bust size shown in the reference image
@@ -75,6 +83,7 @@ Bust Consistency Rules:
 - preserve full breast volume and projection
 - preserve natural D-cup fullness across every prompt
 - maintain visible breast projection
+- maintain visible D-cup bust projection through wardrobe, pose, camera angle, and framing
 - maintain full upper breast volume
 - maintain full lower breast volume
 - maintain rounded natural breast shape
@@ -88,6 +97,63 @@ Bust Consistency Rules:
 - do not flatten the chest
 - do not make the breasts look like a small B cup
 - keep bust proportions consistent across every prompt
+
+Premium Body Output Requirement:
+- Every final prompt must explicitly include her same full natural D-cup bust.
+- Every final prompt must explicitly include her same feminine hourglass body.
+- Every final prompt must explicitly include her same waist-to-hip proportions.
+- Every final prompt must explicitly include rich dark tan skin.
+- Every final prompt must preserve and visibly reference her same recognizable body structure.
+- The D-cup bust requirement is mandatory in every returned prompt.
+- Never reduce, soften, omit, or generalize the D-cup bust requirement.
+- Do not say only "curvy" or "attractive"; explicitly write full natural D-cup bust.
+- Do not make body preservation implicit only.
+- Do not omit the D-cup bust or hourglass body continuity from the final prompt text.
+- For clothed or lingerie prompts, preserve the body through fitted wardrobe, natural cleavage when visible, bust projection through fabric, flattering posture, and close-medium framing.
+- Use premium-safe wording such as:
+  - full natural D-cup bust
+  - feminine hourglass body
+  - same curvy waist-to-hip proportions
+  - rich dark tan skin
+  - fitted premium styling that preserves her bust and body shape
+  - visible D-cup bust projection through the outfit
+
+Premium Framing Requirement:
+- Favor closer creator-style framing over distant scenery.
+- Most prompts should use close-up, close-medium, waist-up, upper-thigh, or head-to-thigh framing.
+- Keep her body large in frame, with the background supporting the scene rather than dominating it.
+- Avoid distant full-body compositions unless the user specifically asks for a wide environmental shot.
+- Do not crop out the body cues needed to preserve her D-cup bust, hourglass shape, and tan skin.
+
+Premium Prompt Detail Contract:
+Every returned premium prompt must be as detailed and concrete as an explicit prompt, but remain premium/teasing unless the user specifically requests nude/topless content.
+
+Each prompt must include:
+- exact reference identity preservation
+- full natural D-cup bust
+- feminine hourglass body
+- same waist-to-hip proportions
+- rich dark tan skin
+- wardrobe or lingerie details
+- pose and body orientation
+- camera angle
+- shot distance and crop
+- expression or viewer connection
+- hand placement or natural micro-behavior
+- lighting quality
+- background/environment details
+- skin, hair, fabric, and texture realism
+- premium creator-content realism
+- photorealistic image-generation detail
+
+For lingerie, teasing, or premium non-nude prompts:
+- use fitted lingerie, sheer robe, bodysuit, fitted sleepwear, bikini, crop top, shorts, or other user-requested wardrobe only when appropriate
+- preserve D-cup bust projection through clothing or lingerie
+- show natural cleavage when wardrobe/framing allows it
+- keep the prompt sensual, intimate, premium, and realistic
+- do not include explicit sexual acts
+- do not include graphic genital detail
+- do not make the content fully nude unless the user tags specifically request nude, naked, topless, or bare breasts
 
 USER CREATIVE TAGS:
 {creative_tags}
@@ -1520,6 +1586,20 @@ Vary emotional presentation naturally.
 - Return exactly {prompt_count} prompts
 - Number the prompts
 - Each prompt must be substantially different
+- Every prompt must explicitly include: full natural D-cup bust
+- Every prompt must explicitly include: feminine hourglass body
+- Every prompt must explicitly include: same waist-to-hip proportions
+- Every prompt must explicitly include: rich dark tan skin
+- Every prompt must visibly preserve the same body size, bust size, and recognizable body structure from the reference image
+- Every prompt must include concrete wardrobe or lingerie detail unless nudity was explicitly requested by the user
+- Every prompt must use close-up, close-medium, waist-up, upper-thigh, or head-to-thigh creator framing unless the user specifically asks for a wide shot
+- Every prompt must keep her body large in frame and avoid distant scenery-dominant composition
+- Every prompt must include pose, body orientation, camera angle, close shot distance, crop, lighting, expression, and environment detail
+- Every prompt must include realistic texture detail such as skin, hair, fabric, shadows, reflections, bedding, furniture, window light, or room surfaces where appropriate
+- Every prompt must be detailed enough to generate a complete premium creator image without needing assumptions
+- Every prompt must feel close, intimate, realistic, and premium, not vague or generic
+- Every prompt must remain teaser/premium-safe unless the user explicitly requests nude, topless, naked, or bare breasts
+- Do not include graphic sexual acts or graphic genital detail in Premium Prompts
 - Every prompt must begin from a different visual concept
 - Every prompt must use a different primary setting or micro-location
 - Do not reuse the same room, furniture piece, corner, seating position, or environmental interaction twice

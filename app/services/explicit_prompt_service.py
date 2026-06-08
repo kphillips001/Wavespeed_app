@@ -16,10 +16,18 @@ QUALITY_SUFFIX = (
 EXPLICIT_ACTION_RULES = """
 EXPLICIT ACTION RULES - REALISTIC & INTIMATE STYLE
 
-When the user mentions dildo, toy, insertion, masturbating, riding, spreading, or similar:
-- Use a thick but realistically proportioned purple translucent dildo
+Only include a dildo or toy if the user explicitly mentions "dildo", "toy", "insertion", "riding", or similar terms.
+When a dildo is mentioned:
+- Use a thick but realistically proportioned dildo (natural human size, not oversized)
+- Do not force purple color unless the user specifically says "purple". Use any realistic color.
 - Show believable natural vaginal insertion with realistic stretching and tight fit (avoid extreme gaping)
-- Natural wetness and arousal: glistening fluids or creamy juices ONLY if the user specifically asks for "wet", "dripping", "creamy", "soaked", or similar
+
+For general masturbation, touching, or spreading prompts (without mentioning a toy):
+- Focus only on manual stimulation, fingers, rubbing, grinding, etc.
+- Do NOT add any dildo or toy
+
+General rules:
+- Natural wetness and arousal: glistening fluids or creamy juices ONLY if the user specifically mentions "wet", "dripping", "creamy", "soaked", or similar
 - Natural anatomy: detailed but realistic pussy, swollen clit, natural labia
 
 VARYING EXPRESSIONS:
@@ -37,14 +45,37 @@ Every generated prompt must preserve the reference woman exactly:
 - same facial structure
 - same hair color
 - same hairstyle
-- same skin tone
+- same skin tone, with rich dark tan skin
 - same body
 - same body proportions
 - same bust size
 - full natural D-cup breast proportions
 - full natural D-cup breast volume
+- same feminine hourglass body
+- same waist-to-hip proportions
 - same overall identity from the reference image
 Do not change her hair color.
+"""
+
+BODY_AND_FRAMING_LOCK_RULES = """
+BODY, TAN, AND FRAMING CONTINUITY LOCK
+Every generated prompt must explicitly preserve:
+- rich dark tan skin
+- same full natural D-cup bust
+- same feminine hourglass body
+- same waist-to-hip proportions
+- same visible body size and recognizable body structure from the reference image
+
+Skin tone rules:
+- keep the tan natural, even, sun-kissed, and photorealistic
+- preserve the same rich dark tan across face, chest, arms, waist, hips, and legs when visible
+- do not make her pale, washed out, fair-skinned, or red-haired
+
+Framing rules:
+- favor close-up, close-medium, waist-up, upper-thigh, or head-to-thigh creator framing
+- keep her body large in frame, with the background supporting the scene rather than dominating it
+- avoid distant full-body compositions unless the user explicitly asks for a wide shot
+- do not crop out the body cues needed to preserve her D-cup bust, hourglass shape, and tan skin
 """
 
 TOPLESS_VISIBILITY_RULES = """
@@ -73,26 +104,33 @@ The AI may expand and enrich them but must not ignore or replace them.
 
 SETTING_RULES = """
 OPTIONAL SETTING RULES
-If the Optional Setting field is blank: choose varied natural settings automatically.
-If supplied: keep all prompts centered on that setting.
+If the Optional Setting field is blank: 
+- Automatically generate diverse, realistic locations and micro-settings.
+- Vary bedrooms, beds, times of day (morning light through windows, afternoon, warm evening lamps, night time, etc.).
+- Avoid repeating the exact same room or bed across the batch.
+
+If the Optional Setting field is supplied:
+- Stay centered on that general setting but still vary micro-locations, angles, and lighting within it.
 """
 
 PROMPT_DIVERSITY_RULES = """
 PROMPT DIVERSITY RULES
-Vary poses, camera angles, framing, and lighting while maintaining realistic proportions.
-Include a natural mix of:
-- Wide and medium shots
-- Tight intimate close-ups
-- Candid "in the moment" angles as if taken privately
-Maintain the same woman and core explicit action.
+For every batch of prompts:
+- Create natural variety in environment even when the main action is the same (e.g. "masturbation on bed" should show different beds, different bedrooms, different lighting conditions, different times of day).
+- Vary poses, camera angles, framing, and facial expressions.
+- Generate the feeling of authentic, private, "in the moment" intimate scenes rather than a uniform photoshoot.
+- Maintain the same woman and core action while changing the surroundings around her.
 """
-
 # ==================== HELPER FUNCTIONS ====================
 TOPLESS_TERMS = ["topless", "bare breasts", "bare breast", "nude", "nudity", "naked", "upper body uncovered", "no upper-body clothing", "no bra", "no top"]
 NUDE_LOWER_BODY_TERMS = ["nude", "nudity", "naked", "fully nude", "completely nude", "bare body", "lower body visible", "pubic area"]
 
 NIPPLE_VISIBILITY_PHRASE = "topless with bare breasts and perky visible nipples unobstructed"
 NUDITY_GROOMING_PHRASE = "no pubic hair, fully smooth pubic area"
+BODY_CONTINUITY_PHRASE = (
+    "rich dark tan skin, full natural D-cup bust, feminine hourglass body, "
+    "same waist-to-hip proportions, close creator-style framing with her body large in frame"
+)
 
 def normalize_prompt_suffix(prompt: str, suffix: str = QUALITY_SUFFIX) -> str:
     cleaned_prompt = (prompt or "").strip()
@@ -130,6 +168,26 @@ def normalize_nudity_grooming(prompt: str) -> str:
     cleaned_prompt = cleaned_prompt.rstrip(" ,.")
     return f"{cleaned_prompt}, {NUDITY_GROOMING_PHRASE}"
 
+def normalize_body_continuity(prompt: str) -> str:
+    cleaned_prompt = (prompt or "").strip()
+    if not cleaned_prompt:
+        return ""
+
+    prompt_lower = cleaned_prompt.lower()
+    required_terms = [
+        "rich dark tan",
+        "d-cup",
+        "hourglass",
+        "waist-to-hip",
+        "close",
+    ]
+
+    if all(term in prompt_lower for term in required_terms):
+        return cleaned_prompt
+
+    cleaned_prompt = cleaned_prompt.rstrip(" ,.")
+    return f"{cleaned_prompt}, {BODY_CONTINUITY_PHRASE}"
+
 def split_user_tags(raw_tags: str) -> list[str]:
     if not raw_tags:
         return []
@@ -162,6 +220,7 @@ Raw user tags:
 {setting_instruction}
 {USER_TAG_PRESERVATION_RULES}
 {IDENTITY_LOCK_RULES}
+{BODY_AND_FRAMING_LOCK_RULES}
 {EXPLICIT_ACTION_RULES}
 {TOPLESS_VISIBILITY_RULES}
 {NUDITY_GROOMING_RULES}
@@ -192,6 +251,7 @@ Enhanced tags:
 {setting_instruction}
 
 {IDENTITY_LOCK_RULES}
+{BODY_AND_FRAMING_LOCK_RULES}
 {EXPLICIT_ACTION_RULES}
 {TOPLESS_VISIBILITY_RULES}
 {NUDITY_GROOMING_RULES}
@@ -201,6 +261,12 @@ Output requirements:
 - Generate exactly {prompt_count} numbered prompts (1., 2., 3. etc.)
 - Each prompt must be one detailed, flowing paragraph
 - Prioritize extreme photorealism and natural body proportions at all times
+- Every prompt must explicitly include rich dark tan skin
+- Every prompt must explicitly include full natural D-cup bust
+- Every prompt must explicitly include feminine hourglass body
+- Every prompt must explicitly include same waist-to-hip proportions
+- Every prompt must use close-up, close-medium, waist-up, upper-thigh, or head-to-thigh creator framing unless the user specifically asks for a wide shot
+- Every prompt must keep her body large in frame
 - Create the feeling of private, "in the moment" intimate photos taken just for the viewer
 - Use natural, believable lighting in every prompt
 - Feature realistic dildo insertion and arousal when relevant
@@ -274,6 +340,8 @@ def generate_explicit_prompts(
             prompt = f"{prompt.rstrip(' ,.')}, {NUDITY_GROOMING_PHRASE}"
         else:
             prompt = normalize_nudity_grooming(prompt)
+
+        prompt = normalize_body_continuity(prompt)
 
         normalized_prompts.append(normalize_prompt_suffix(prompt))
 

@@ -9,7 +9,6 @@ import streamlit as st
 
 from app.services.premium_director_service import (
     generate_premium_prompts,
-    generate_explicit_prompts as generate_bold_premium_prompts,
 )
 
 from app.services.premium_render_service import (
@@ -112,7 +111,116 @@ def render_premium_prompt_expander():
 
 
 def render_premium_generated_image_gallery(selected_output_dir):
-    return
+    generated_images = st.session_state.get(
+        "premium_generated_images",
+        [],
+    )
+
+    if not generated_images:
+        return
+
+    st.markdown("---")
+    st.subheader("Generated Images")
+
+    cols = st.columns(3)
+
+    for index, image_item in enumerate(generated_images):
+        with cols[index % 3]:
+            image_url = image_item.get(
+                "url",
+                image_item.get("local_path", ""),
+            )
+
+            if image_url:
+                st.image(
+                    image_url,
+                    use_container_width=True,
+                )
+
+            with st.expander("Prompt"):
+                st.write(
+                    image_item.get(
+                        "prompt",
+                        "",
+                    )
+                )
+
+
+def build_manual_premium_prompt(
+    manual_prompt,
+    additional_detail="",
+):
+    prompt_parts = [
+        manual_prompt.strip(),
+        """
+Reference body lock:
+Use the exact same woman from the reference image.
+Preserve the exact same face, hair, skin tone, body size, body weight, and body proportions from the reference image.
+Preserve her full natural D-cup breast proportions, full D-cup breast volume, visible breast projection, rounded natural breast shape, feminine hourglass body, waist-to-hip ratio, hip width, thigh thickness, leg proportions, and shoulder width.
+Do not reduce breast volume.
+Do not make her smaller-busted than the reference image.
+Do not flatten the chest.
+Do not change her body size, body weight, waist, hips, thighs, shoulders, bust-to-waist proportions, or recognizable silhouette.
+Keep the body realistic and photorealistic.
+""".strip(),
+    ]
+
+    if additional_detail and additional_detail.strip():
+        prompt_parts.append(
+            f"Additional regeneration detail: {additional_detail.strip()}"
+        )
+
+    return "\n\n".join(
+        part
+        for part in prompt_parts
+        if part
+    )
+
+
+def run_single_manual_premium_generation(
+    manual_prompt,
+    additional_detail,
+    active_premium_reference_image,
+    selected_output_dir,
+    premium_renderer,
+    progress_callback=None,
+):
+    locked_prompt = build_manual_premium_prompt(
+        manual_prompt=manual_prompt,
+        additional_detail=additional_detail,
+    )
+
+    return generate_premium_images(
+        premium_prompts=[
+            {
+                "id": "manual_prompt",
+                "text": locked_prompt,
+            }
+        ],
+        uploaded_file=active_premium_reference_image,
+        selected_output_dir=selected_output_dir,
+        premium_renderer=premium_renderer,
+        progress_callback=progress_callback,
+    )
+
+
+def append_premium_render_results(render_results):
+    st.session_state["premium_generated_images"].extend(
+        render_results.get(
+            "generated_images",
+            [],
+        )
+    )
+
+    st.session_state["premium_failed_images"].extend(
+        render_results.get(
+            "failed_images",
+            [],
+        )
+    )
+
+    st.session_state["premium_generation_complete"] = True
+
     # if (
     #     not st.session_state["premium_generated_images"]
     #     or not st.session_state.get("premium_generation_complete", False)
@@ -535,7 +643,7 @@ def render_premium_content_studio_legacy(selected_output_dir):
             "premium_enhanced_explicit_tags_value"
         ].strip()
 
-        prompt_button_col1, prompt_button_col2, prompt_button_col3 = st.columns(3)
+        prompt_button_col1, prompt_button_col2 = st.columns(2)
 
         with prompt_button_col1:
             get_premium_prompts_clicked = st.button(
@@ -549,13 +657,6 @@ def render_premium_content_studio_legacy(selected_output_dir):
                 "🔥 Get Explicit Prompts",
                 use_container_width=True,
                 disabled=not enhanced_explicit_tags_for_prompt,
-            )
-
-        with prompt_button_col3:
-            get_bold_premium_prompts_clicked = st.button(
-                "Get Bold Premium Prompts",
-                use_container_width=True,
-                disabled=not tags_for_prompt_generation,
             )
 
         if get_explicit_prompts_clicked:
@@ -588,36 +689,6 @@ def render_premium_content_studio_legacy(selected_output_dir):
             st.session_state["premium_generation_complete"] = False
 
             st.success("Explicit prompt batch generated.")
-
-        if get_bold_premium_prompts_clicked:
-            with st.spinner("Generating bold premium prompts with Grok..."):
-                bold_premium_prompts = generate_bold_premium_prompts(
-                    creative_tags=tags_for_prompt_generation,
-                    prompt_count=premium_prompt_count,
-                )
-
-            st.session_state["premium_reference_image"] = active_premium_reference_image
-            st.session_state["premium_user_tags"] = premium_user_tags
-            st.session_state["premium_tags_used_for_prompts"] = tags_for_prompt_generation
-            st.session_state["premium_tag_source_used_for_prompts"] = selected_tag_source
-            st.session_state["premium_prompt_mode"] = "bold_premium"
-
-            st.session_state["premium_prompts"] = [
-                {
-                    "id": f"bold_premium_prompt_{index}",
-                    "text": prompt,
-                }
-                for index, prompt in enumerate(
-                    bold_premium_prompts,
-                    start=1,
-                )
-            ]
-
-            st.session_state["premium_generated_images"] = []
-            st.session_state["premium_failed_images"] = []
-            st.session_state["premium_generation_complete"] = False
-
-            st.success("Bold premium prompt batch generated.")
 
         if not active_premium_reference_image:
             st.caption(
@@ -830,6 +901,8 @@ def init_premium_content_state():
         "premium_prompt_count": 10,
         "show_premium_reference_library": False,
         "premium_manual_prompt_saved": "",
+        "premium_last_manual_prompt_base": "",
+        "premium_manual_regenerate_detail": "",
     }
 
     for key, value in defaults.items():
@@ -1162,7 +1235,7 @@ def render_premium_creative_director(
                 "premium_enhanced_explicit_tags_value"
             ].strip()
 
-            prompt_col1, prompt_col2, prompt_col3 = st.columns(3)
+            prompt_col1, prompt_col2 = st.columns(2)
 
             with prompt_col1:
                 get_premium_prompts_clicked = st.form_submit_button(
@@ -1173,12 +1246,6 @@ def render_premium_creative_director(
             with prompt_col2:
                 get_explicit_prompts_clicked = st.form_submit_button(
                     "Get Explicit Prompts",
-                    use_container_width=True,
-                )
-
-            with prompt_col3:
-                get_bold_premium_prompts_clicked = st.form_submit_button(
-                    "Get Bold Premium Prompts",
                     use_container_width=True,
                 )
 
@@ -1204,28 +1271,6 @@ def render_premium_creative_director(
                     )
 
                     st.success("Explicit prompt batch generated.")
-
-            if get_bold_premium_prompts_clicked:
-                if not tags_for_prompt_generation:
-                    st.error("Choose or generate tags before requesting prompts.")
-                else:
-                    with st.spinner("Generating bold premium prompts with Grok..."):
-                        bold_premium_prompts = generate_bold_premium_prompts(
-                            creative_tags=tags_for_prompt_generation,
-                            prompt_count=premium_prompt_count,
-                        )
-
-                    set_premium_prompt_batch(
-                        prompts=bold_premium_prompts,
-                        prompt_id_prefix="bold_premium_prompt",
-                        prompt_mode="bold_premium",
-                        tags_used=tags_for_prompt_generation,
-                        tag_source=selected_tag_source,
-                        premium_user_tags=premium_user_tags,
-                        active_reference_image=active_premium_reference_image,
-                    )
-
-                    st.success("Bold premium prompt batch generated.")
 
             if get_premium_prompts_clicked:
                 if not tags_for_prompt_generation:
@@ -1274,9 +1319,9 @@ def render_premium_content_studio(selected_output_dir):
 
     st.markdown("---")
 
-    with st.form(
-        "premium_renderer_form",
-        clear_on_submit=False,
+    with st.expander(
+        "Manual Prompt",
+        expanded=False,
     ):
         manual_prompt = st.text_area(
             "Manual Prompt",
@@ -1287,8 +1332,12 @@ def render_premium_content_studio(selected_output_dir):
             ),
         )
 
-        st.subheader("Premium Renderer")
+    st.subheader("Premium Renderer")
 
+    with st.form(
+        "premium_renderer_form",
+        clear_on_submit=False,
+    ):
         premium_renderer = st.selectbox(
             "Choose premium render engine",
             options=[
@@ -1361,35 +1410,47 @@ def render_premium_content_studio(selected_output_dir):
                             )
 
         with st.spinner(f"Generating premium images with {premium_renderer}..."):
-            prompts_to_generate = st.session_state["premium_prompts"]
-
             if manual_prompt.strip():
-                prompts_to_generate = [
-                    {
-                        "id": "manual_prompt",
-                        "text": manual_prompt.strip(),
-                    }
-                ]
+                st.session_state[
+                    "premium_last_manual_prompt_base"
+                ] = manual_prompt.strip()
 
-            render_results = generate_premium_images(
-                premium_prompts=prompts_to_generate,
-                uploaded_file=active_premium_reference_image,
-                selected_output_dir=selected_output_dir,
-                premium_renderer=premium_renderer,
-                progress_callback=update_premium_progress,
-            )
+                render_results = run_single_manual_premium_generation(
+                    manual_prompt=manual_prompt,
+                    additional_detail="",
+                    active_premium_reference_image=active_premium_reference_image,
+                    selected_output_dir=selected_output_dir,
+                    premium_renderer=premium_renderer,
+                    progress_callback=update_premium_progress,
+                )
 
-        st.session_state["premium_generated_images"] = render_results.get(
-            "generated_images",
-            [],
-        )
+                append_premium_render_results(
+                    render_results
+                )
 
-        st.session_state["premium_failed_images"] = render_results.get(
-            "failed_images",
-            [],
-        )
+            else:
+                st.session_state["premium_last_manual_prompt_base"] = ""
+                st.session_state["premium_manual_regenerate_detail"] = ""
 
-        st.session_state["premium_generation_complete"] = True
+                render_results = generate_premium_images(
+                    premium_prompts=st.session_state["premium_prompts"],
+                    uploaded_file=active_premium_reference_image,
+                    selected_output_dir=selected_output_dir,
+                    premium_renderer=premium_renderer,
+                    progress_callback=update_premium_progress,
+                )
+
+                st.session_state["premium_generated_images"] = render_results.get(
+                    "generated_images",
+                    [],
+                )
+
+                st.session_state["premium_failed_images"] = render_results.get(
+                    "failed_images",
+                    [],
+                )
+
+                st.session_state["premium_generation_complete"] = True
 
         completed_count = len(st.session_state["premium_generated_images"])
         failed_count = len(st.session_state["premium_failed_images"])
@@ -1406,6 +1467,82 @@ def render_premium_content_studio(selected_output_dir):
     render_premium_generated_image_gallery(
         selected_output_dir=selected_output_dir,
     )
+
+    if (
+        st.session_state.get("premium_last_manual_prompt_base")
+        and st.session_state.get("premium_generated_images")
+    ):
+        with st.form(
+            "premium_manual_regenerate_form",
+            clear_on_submit=False,
+        ):
+            regenerate_detail = st.text_area(
+                "Additional detail for regeneration",
+                key="premium_manual_regenerate_detail",
+                height=100,
+                placeholder=(
+                    "Optional: add a small change, detail, pose adjustment, "
+                    "lighting tweak, or framing note."
+                ),
+            )
+
+            regenerate_clicked = st.form_submit_button(
+                "Regenerate Another Image",
+                use_container_width=True,
+            )
+
+        if regenerate_clicked:
+            if not has_premium_reference_image:
+                st.error("Select a premium reference image before regenerating.")
+                st.stop()
+
+            progress_bar = st.progress(0)
+            status_placeholder = st.empty()
+
+            def update_regenerate_progress(
+                current,
+                total,
+                message,
+                generated_images=None,
+                failed_images=None,
+            ):
+                progress_value = 0
+
+                if total > 0:
+                    progress_value = int((current / total) * 100)
+
+                progress_bar.progress(progress_value)
+
+                completed_count = len(generated_images or [])
+                failed_count = len(failed_images or [])
+
+                status_placeholder.info(
+                    f"{message}  "
+                    f"completed {completed_count}  "
+                    f"failed {failed_count}"
+                )
+
+            with st.spinner("Regenerating another premium image..."):
+                regenerate_results = run_single_manual_premium_generation(
+                    manual_prompt=st.session_state[
+                        "premium_last_manual_prompt_base"
+                    ],
+                    additional_detail=regenerate_detail,
+                    active_premium_reference_image=active_premium_reference_image,
+                    selected_output_dir=selected_output_dir,
+                    premium_renderer=premium_renderer,
+                    progress_callback=update_regenerate_progress,
+                )
+
+            append_premium_render_results(
+                regenerate_results
+            )
+
+            st.session_state["save_toast_message"] = (
+                "Regenerated image added for comparison."
+            )
+
+            st.rerun()
 
     if (
         st.session_state.get("premium_generation_complete", False)

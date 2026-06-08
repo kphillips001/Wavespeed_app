@@ -169,8 +169,8 @@ def render_premium_gallery(selected_output_dir):
                 use_container_width=True,
             )
 
-            action_col1, action_col2, action_col3, action_col4, action_col5 = st.columns(
-                [1, 1, 1, 1, 1]
+            action_col1, action_col2, action_col3, action_col4, action_col5, action_col6 = st.columns(
+                [1, 1, 1, 1, 1, 1]
             )
 
             with action_col1:
@@ -266,6 +266,35 @@ def render_premium_gallery(selected_output_dir):
                     st.rerun()
 
             with action_col5:
+                if st.button(
+                    "💎",
+                    key=f"premium_gallery_fanvue_wall_{safe_image_key}",
+                    help="Move to Fanvue Wall vault",
+                    use_container_width=True,
+                ):
+                    fanvue_wall_dir = premium_gallery_dir / "Fanvue Wall"
+                    fanvue_wall_dir.mkdir(
+                        parents=True,
+                        exist_ok=True,
+                    )
+
+                    destination = get_unique_image_path(
+                        fanvue_wall_dir,
+                        Path(image_path).name,
+                    )
+
+                    shutil.move(
+                        str(image_path),
+                        str(destination),
+                    )
+
+                    st.session_state["save_toast_message"] = (
+                        "💎 Moved premium image to Fanvue Wall vault"
+                    )
+
+                    st.rerun()
+
+            with action_col6:
                 if st.button(
                     "🗑️",
                     key=f"premium_gallery_delete_{safe_image_key}",

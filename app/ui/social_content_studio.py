@@ -5,7 +5,10 @@ import streamlit as st
 
 from app.config.settings import MODELS
 from app.prompts.generation_modes import GENERATION_MODES
-from app.prompts.prompt_builder import build_chatgpt_prompt
+from app.prompts.prompt_builder import (
+    build_chatgpt_prompt,
+    normalize_social_prompt_continuity,
+)
 from app.services.batch_state_service import save_current_batch_state
 from app.services.session_reset_service import reset_social_studio_session
 from app.services.social_lucky_service import generate_lucky_social_tags
@@ -209,6 +212,12 @@ Fresh request ID: {refresh_nonce}
             meta_prompt,
             grok_key,
         )
+
+        prompts = [
+            normalize_social_prompt_continuity(prompt)
+            for prompt in prompts
+            if str(prompt).strip()
+        ]
 
         for key in list(st.session_state.keys()):
             if key.startswith("text_prompt_"):

@@ -1,6 +1,33 @@
 from app.prompts.shot_types import SHOT_TYPES
 
 
+SOCIAL_BODY_CONTINUITY_PHRASE = (
+    "rich dark tan skin, full natural D-cup bust, feminine hourglass body, "
+    "same waist-to-hip proportions, close creator-style framing with her body large in frame"
+)
+
+
+def normalize_social_prompt_continuity(prompt):
+    cleaned_prompt = (prompt or "").strip()
+    if not cleaned_prompt:
+        return ""
+
+    prompt_lower = cleaned_prompt.lower()
+    required_terms = [
+        "rich dark tan",
+        "d-cup",
+        "hourglass",
+        "waist-to-hip",
+        "close",
+    ]
+
+    if all(term in prompt_lower for term in required_terms):
+        return cleaned_prompt
+
+    cleaned_prompt = cleaned_prompt.rstrip(" ,.")
+    return f"{cleaned_prompt}, {SOCIAL_BODY_CONTINUITY_PHRASE}"
+
+
 def build_shot_type_context():
     formatted_shot_types = "\n".join(
         f"- {shot_type}"
@@ -1028,6 +1055,7 @@ Every prompt MUST preserve:
 - same woman
 - same face
 - same hair
+- same rich dark tan skin
 - same body
 - same identity from the reference image
 
@@ -1042,10 +1070,19 @@ BODY CONSISTENCY LOCK:
 - preserve the same leg proportions
 - preserve the same shoulder width
 - preserve the same feminine hourglass silhouette
+- preserve the same rich dark tan skin tone
+- maintain a natural, even, sun-kissed dark tan across visible skin
 - preserve realistic anatomy
 - preserve photorealistic body structure
 - maintain healthy feminine curves
 - maintain consistent body proportions across every generated image
+
+SKIN TONE CONTINUITY LOCK:
+- every final prompt must explicitly include rich dark tan skin
+- preserve the same rich dark tan across face, chest, arms, waist, hips, and legs when visible
+- keep the tan natural, even, sun-kissed, and photorealistic
+- do not make her pale, washed out, fair-skinned, or red-haired
+- do not change her underlying identity or facial features while emphasizing the dark tan
 
 BUST CONSISTENCY LOCK:
 - preserve the exact bust size shown in the reference image
@@ -1054,11 +1091,35 @@ BUST CONSISTENCY LOCK:
 - preserve full breast volume and projection
 - preserve natural D-cup fullness across every prompt
 - maintain visible breast projection when clothing and pose allow it
+- maintain a visibly full D-cup bust through social-safe styling, pose, framing, and fitted wardrobe
 - maintain full upper breast volume
 - maintain full lower breast volume
 - maintain rounded natural breast shape
 - maintain natural cleavage when visible
 - keep bust proportions consistent across every prompt
+
+SOCIAL OUTPUT BODY DESCRIPTION REQUIREMENT:
+- Every final prompt must explicitly describe her same full natural D-cup bust.
+- Every final prompt must explicitly describe her same feminine hourglass body shape.
+- Every final prompt must preserve and visibly reference her same waist-to-hip ratio.
+- Every final prompt must explicitly describe her rich dark tan skin.
+- Every final prompt must keep the body description social-safe through clothing, styling, pose, camera angle, and framing.
+- Do not make body preservation implicit only.
+- Do not omit bust/body continuity from the final prompt text.
+- Use SFW wording such as:
+  - full natural D-cup bust
+  - feminine hourglass silhouette
+  - same curvy waist-to-hip proportions
+  - rich dark tan skin
+  - fitted social-safe styling that preserves her bust and body shape
+  - visible D-cup bust projection through the outfit
+
+SOCIAL FRAMING CONTINUITY REQUIREMENT:
+- Favor the same closer creator-style framing that works in Premium Content Studio.
+- Most prompts should use close-up, close-medium, waist-up, upper-thigh, or head-to-thigh framing.
+- Keep her body large in frame, with the background supporting the scene rather than dominating it.
+- Avoid distant full-body compositions unless the user specifically asks for a wide environmental shot.
+- Do not crop out the body cues needed to preserve her D-cup bust, hourglass shape, and tan skin.
 
 Do NOT:
 - reduce breast volume
@@ -1092,7 +1153,14 @@ Do NOT:
 
 PROMPT STRUCTURE:
 Each prompt MUST start with:
-"The exact same woman from the reference image with identical face, hair, and body,"
+"The exact same woman from the reference image with identical face, hair, rich dark tan skin, full natural D-cup bust, and feminine hourglass body,"
+
+Every final prompt must include:
+- full natural D-cup bust
+- feminine hourglass body
+- same waist-to-hip proportions
+- rich dark tan skin
+- social-safe fitted styling or framing that preserves her exact body shape
 
 Avoid reusing the same action, pose, or body orientation from previous generations.
 
