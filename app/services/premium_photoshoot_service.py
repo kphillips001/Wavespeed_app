@@ -7,6 +7,8 @@ from openai import OpenAI
 
 from main import generate_prompts_with_grok
 
+from app.prompts.nsfw_progression import build_nsfw_photoshoot_escalation
+
 load_dotenv()
 
 
@@ -52,24 +54,22 @@ def analyze_premium_reference_image(image_path):
     base64_image = encode_reference_image(image_path)
 
     prompt = """
-Analyze this premium photoshoot reference image for scene continuity.
+You are analyzing a reference image for an escalating NSFW premium photoshoot.
 
-Return a concise visual description that can be reused as source-image context
-for image-edit prompts.
+Return a concise but precise visual description focused on continuity and current state.
 
-Focus only on:
-- location and setting
-- water/pool/bed/room/outdoor details if visible
-- clothing or coverage state
-- lighting and time-of-day feel
-- pose/body position
-- framing/camera distance
-- mood/expression
+Focus especially on:
+- exact location / room / environment (floor, walls, lighting, background elements)
+- current clothing or nudity state in detail (e.g. "fully clothed", "wearing lingerie", "topless wearing only black thong", "completely nude", "sheer robe open", etc.)
+- which body parts are visible (breasts visible? nipples? lower body covered?)
+- current pose and body position
+- lighting and time-of-day
+- framing / camera distance
 
-Do not invent missing details.
-Do not make it safer or less revealing than the image.
-Do not change the location.
-Return plain text only.
+Be direct and accurate about nudity/coverage level. Do not soften or censor.
+Do not invent details that are not visible.
+Do not change the location or setting.
+Return only plain text description, no labels or bullet points.
 """.strip()
 
     response = openai_client.responses.create(
@@ -106,7 +106,7 @@ def build_premium_photoshoot_prompt(
     )
 
     return f"""
-You are the Premium Photoshoot Director for a GFE image system.
+You are the Premium Photoshoot Director for an escalating NSFW GFE image system.
 
 Generate exactly {session_count} WAN 2.7 image-edit prompts.
 
@@ -116,220 +116,129 @@ The following source-image context is authoritative and must be followed:
 SOURCE IMAGE CONTEXT:
 {reference_context}
 
+================================================================================
+AUTOMATIC NSFW EVOLUTION MODE (HIGHEST PRIORITY - OVERRIDES OTHER RULES)
+================================================================================
+
+Read the SOURCE IMAGE CONTEXT above to determine the woman's **current coverage / nudity state**.
+
+Then generate a clear, gradual erotic progression across all {session_count} prompts, starting from exactly the state described in the reference.
+
+Typical progression ladder (adapt the starting point based on what the reference actually shows):
+
+1. Start extremely close to the reference: same pose, same clothing/coverage level, same environment.
+2. Increase sensuality: hands exploring breasts, squeezing, playing with nipples (if topless or becoming topless).
+3. Lower body touch: hand between legs, rubbing over panties/thong, visible arousal/wetness.
+4. Progressive clothing removal: sliding panties down, partial removal, more skin revealed.
+5. Full removal: panties/thong completely off, full nudity, legs naturally opening/spreading.
+6. Explicit self-pleasure: fingers on clit, fingering, masturbation poses, intimate self-touch.
+7. Peak: arched back, eyes closed in pleasure, biting lip, moaning expressions, intense intimate moments.
+
+MANDATORY RULES FOR THIS SESSION:
+- Stay in the **EXACT same environment** for every prompt: same floor, same walls, same lighting, same background, same furniture, same room. Do NOT change location or add new props/rooms.
+- Never add clothing back or reduce the nudity level compared to previous steps.
+- Perfect continuity: same woman, same face, same hair, same rich dark tan skin, same body, same full natural D-cup breasts with visible nipples when exposed.
+- Increase explicitness and intimacy **gradually and naturally** across the batch.
+- Use natural, sensual, private-creator-moment language.
+- The batch must feel like one continuous private moment that slowly escalates in real time.
+
+If the reference is already quite nude, start the ladder from that point and escalate further into self-touch and peak pleasure.
+If the reference is clothed or lightly covered, the progression should still move toward increasing nudity and explicit acts, but do it gradually.
+
+This NSFW evolution takes priority over general variety or emotional-only escalation.
+
+================================================================================
+
 CORE GOAL:
-Create a continuity-locked Girlfriend Experience premium session.
+Create a continuity-locked escalating NSFW premium photoshoot that feels like a private GFE moment unfolding.
 
-This is NOT social content.
-This is NOT luxury content.
-This is NOT editorial photography.
-This is NOT a random prompt batch.
+This is NOT a random batch.
 This is NOT a professional photoshoot.
+This is a private, intimate, progressively more explicit session with the same woman in the same place.
 
-The product is connection, access, intimacy, warmth, and emotional escalation.
-
-CONTINUITY LOCK:
+CONTINUITY LOCK (adjusted for NSFW escalation):
 Every prompt must preserve:
 - same woman
 - same face
 - same hair
-- same body
-- same skin tone
-- same exact location and visible environment from SOURCE IMAGE CONTEXT
-- same visible props, surfaces, water, furniture, or background elements from SOURCE IMAGE CONTEXT
+- same body proportions and skin tone
+- same exact location and visible environment from SOURCE IMAGE CONTEXT (floor, walls, lighting, background — this is non-negotiable)
 - same lighting and time-of-day feel from SOURCE IMAGE CONTEXT
-- same outfit state or same level of coverage as the reference image
-- same realistic candid atmosphere
 
-Do NOT change location.
-Do NOT add couches, beds, rooms, pools, resorts, or unrelated locations unless they are clearly present in SOURCE IMAGE CONTEXT or explicitly requested by the user.
-Do NOT replace a pool/water scene with an indoor couch scene.
-Do NOT replace topless, nude, bikini, lingerie, or clothed coverage with a different coverage level unless explicitly requested by the user.
-Do NOT create a story sequence.
-Do NOT describe where she went earlier.
-Do NOT make it look polished, staged, editorial, or fashion-model styled.
+The outfit / coverage level is **allowed and expected to change** as part of the NSFW progression (clothing removal is the point of the escalation).
 
-SESSION STYLE:
-The images should feel like a private GFE chatting session.
-The viewer should feel like they are spending time with her in the same setting.
-Each image should feel more connected, more intimate, and more emotionally engaging than the previous one.
+Do NOT change the physical location or major environment.
+Do NOT invent new rooms, beds, pools, or furniture that are not in the SOURCE IMAGE CONTEXT.
 
-POSE VARIATION IS MANDATORY:
+SESSION STYLE (NSFW Photoshoot):
+The images should feel like one continuous private NSFW moment with her in the exact same place.
+The viewer should feel like they are watching a real, intimate escalation unfold in real time.
 
-Every image must use a noticeably different pose.
+The core of this session is **gradual NSFW progression** (as defined in the high-priority block above), combined with natural pose and framing variety inside the locked environment.
 
-Do not repeat the pose from the previous image.
+POSE & FRAMING VARIATION (inside the fixed environment):
+Every image must feel visually distinct through:
+- different poses and body positions (plausible in the source setting)
+- different camera angles and distances (while staying intimate)
+- different hand placement and micro-actions that support the current escalation step
+- varying framing (close-up, medium, upper-thigh, etc.) as the explicitness increases
 
-Do not keep the woman seated in the same position throughout the session.
+Do not repeat the exact same pose or framing consecutively.
 
-The woman should naturally change positions as if spending time in the room.
-If the source image is outdoors, in water, at a pool, in a shower, on a bed, in a bedroom, or any other specific setting,
-all pose changes must remain physically plausible inside that same setting.
+All changes must stay physically inside the environment described in SOURCE IMAGE CONTEXT.
 
-Examples include:
+NSFW ESCALATION IS THE PRIMARY DRIVER:
+The sexual progression defined earlier (clothing removal → touching → explicit self-pleasure) must be clearly visible and advancing across the batch.
 
-- leaning closer toward camera
-- turning over shoulder
-- resting on one elbow
-- sitting or kneeling where the source setting allows
-- reclining where the source setting allows
-- standing or half-standing where the source setting allows
-- shifting weight naturally
-- changing arm placement
-- changing gaze direction
-- changing torso angle
-
-Each image must create obvious visual variety while preserving continuity.
-
-ESCALATION SYSTEM:
-Treat the entire session as a progressive emotional intimacy ladder.
-
-The escalation must occur regardless of whether the session contains
-5, 10, 15, 20, or 25 images.
-
-Early Stage (0-20%):
-- relaxed
-- comfortable
-- inviting
-- warm eye contact
-- natural posture
-- approachable girlfriend energy
-
-Flirty Stage (20-40%):
-- playful smiles
-- teasing expressions
-- stronger viewer engagement
-- increased confidence
-- subtle flirtation
-
-Teasing Stage (40-60%):
-- more suggestive body language
-- closer framing
-- stronger eye contact
-- more intimate posture
-- heightened anticipation
-
-Intimate Stage (60-80%):
-- private subscriber-only feeling
-- emotionally connected
-- stronger confidence
-- inviting posture
-- increased romantic tension
-
-Peak Tension Stage (80-100%):
-- highest emotional intimacy level of the session
-- strongest viewer connection
-- most private feeling
-- most confident body language
-- strongest romantic anticipation
-
-IMPORTANT:
-Each prompt must feel like a natural continuation of the previous image.
-
-Every escalation step must include BOTH:
-
-1. Increased intimacy
-2. New body positioning
-
-Expression changes alone are not sufficient.
-
-The viewer should immediately recognize a different pose when comparing adjacent images.
-
-The woman should frequently change posture, orientation, camera relationship, and position within the room while preserving continuity.
-
-The woman should appear progressively more comfortable,
-more playful,
-more flirtatious,
-and more emotionally connected to the viewer as the session progresses.
-
-Never reset the escalation.
-Never jump backward.
-Every prompt should build naturally upon the previous one.
+Emotional connection, eye contact, and expressions should support the sexual escalation (pleasure faces, inviting looks, biting lip, etc.) rather than replace it.
 
 SESSION CONTINUITY RULE:
-The viewer should feel like all images were taken within
-the same 10-minute period.
+The viewer should feel like all images were taken within the same short private session in one location.
 
-Maintain:
-- same exact source-image setting
-- same visible environment details
+Maintain strictly:
+- same exact physical environment and all visible details from SOURCE IMAGE CONTEXT
 - same lighting
-- same atmosphere
-- same camera style
-- same woman
-- same appearance
+- same woman, face, hair, body, skin tone
+- same overall candid / private atmosphere
 
-Only posture, expression, body language, framing,
-and emotional intimacy level should evolve.
+Only the following are allowed to evolve:
+- clothing coverage (decreasing as per the NSFW ladder)
+- pose and body position
+- hand actions and self-touch
+- explicitness level
+- facial expression / pleasure response
+- framing and camera angle (while staying in the same room)
 
-POSE EVOLUTION RULE:
+Do NOT generate prompts that only change expression or eye contact while keeping the same coverage and pose.
 
-Every prompt MUST introduce a clearly different pose.
+The woman's physical state (how covered or how she is touching herself) must advance with the progression.
 
-Do NOT generate prompts that differ only by:
-- facial expression
-- eye contact
-- smile intensity
-- camera distance
+ENVIRONMENT LOCK (CRITICAL):
+The single most important rule after identity continuity is:
+**Never change the room, floor, walls, lighting, or major background elements.**
 
-The woman's physical position must evolve
-throughout the session.
-
-Examples of acceptable progression:
-- relaxed starting posture matching the source image
-- leaning slightly closer
-- turning shoulder or hip angle
-- shifting arm placement
-- changing gaze and expression
-- reclining or sitting only if plausible in the source setting
-- standing or kneeling only if plausible in the source setting
-- moving closer to the camera while keeping the same environment
-
-Each image should feel like a different moment
-from the same private session.
-
-Do NOT generate multiple prompts with essentially
-the same sitting position.
-Do NOT generate couch, bed, floor, window, or room poses unless those details exist in SOURCE IMAGE CONTEXT or the user requested them.
-
-Each image should feel like a new moment from
-the same private session.
-
-Examples:
-- same source location, slightly different pose
-- same source lighting, closer gaze
-- same source environment, different torso angle
-- same source coverage, different arm placement
-- same source scene, more intimate framing
-
-The pose progression should evolve naturally
-throughout the session while preserving
-the same environment and continuity.
+Every single prompt must be obviously happening in the exact same physical space as the reference image.
 
 PROMPT STYLE:
-Keep the wording visual and image-generation friendly.
-Avoid poetic filler.
-Avoid repeating the same sentence structure.
-Avoid luxury language.
-Avoid professional photography language.
+Keep the wording visual, concrete, and directly usable for WAN 2.7 image editing.
+Be explicit about nudity, body contact, and actions once the progression reaches those stages.
+Match the tone of authentic private creator content.
 
-Use candid phrases like:
-- leaning closer
-- playful teasing grin
-- soft direct eye contact
-- natural body language
-- intimate in-the-moment feeling
-- private subscriber-only atmosphere
-- realistic source-matched lighting
-- comfortable girlfriend energy
-- quiet romantic tension
-- subtle playful confidence
+Use natural, in-the-moment phrases such as:
+- still in the same spot on the wooden floor
+- slowly sliding her thong down her thighs
+- hand between her legs, fingers moving
+- back slightly arched
+- fingers circling her clit
+- eyes closed, biting her lower lip
+- natural light on her skin
+- legs parted
 
 Optional user direction:
 {session_direction}
 
 USER DIRECTION RULE:
-If Optional user direction is blank, do not invent a new location or setup.
-If Optional user direction conflicts with SOURCE IMAGE CONTEXT, follow the user direction only for the specific detail requested and preserve the rest of the source context.
+Optional direction can emphasize certain steps or add flavor, but the core NSFW progression, environment lock, and identity continuity from the source context must be respected.
 
 OUTPUT FORMAT:
 Return only a numbered list of prompts.
