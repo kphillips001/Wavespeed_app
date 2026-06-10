@@ -5,7 +5,6 @@ import shutil
 import streamlit as st
 
 from app.config.content_paths import (
-    get_premium_photoshoot_dir,
     get_premium_gallery_dir,
 )
 
@@ -14,6 +13,7 @@ from app.ui.image_file_utils import (
 )
 
 from app.services.premium_photoshoot_service import (
+    analyze_premium_reference_image,
     generate_premium_photoshoot_prompts,
 )
 
@@ -22,6 +22,11 @@ from app.services.premium_render_service import (
 )
 
 IMAGE_SUFFIXES = [".png", ".jpg", ".jpeg", ".webp"]
+PREMIUM_PHOTOSHOOT_RENDERER = "WAN 2.7 Image Edit"
+
+
+def get_premium_queue_dir(selected_output_dir):
+    return Path(selected_output_dir) / "Premium" / "Photoshoot"
 
 
 class LocalImageUpload:
@@ -33,8 +38,196 @@ class LocalImageUpload:
         return self.image_path.read_bytes()
 
 
+def create_premium_photoshoot_session_dir(premium_photoshoot_dir):
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    session_dir = premium_photoshoot_dir / f"photoshoot_premium_{timestamp}"
+    session_dir.mkdir(parents=True, exist_ok=True)
+    return session_dir
+
+
+def move_reference_to_session(image_path, session_dir):
+    reference_name = f"source_reference{image_path.suffix.lower()}"
+    destination = get_unique_image_path(session_dir, reference_name)
+    shutil.move(str(image_path), str(destination))
+    return destination
+
+
+def get_image_files(folder_path):
+    return sorted(
+        [
+            image_path
+            for image_path in folder_path.iterdir()
+            if image_path.is_file()
+            and image_path.suffix.lower() in IMAGE_SUFFIXES
+        ],
+        key=lambda path: path.stat().st_mtime,
+        reverse=True,
+    )
+
+
+def get_completed_session_dirs(premium_photoshoot_dir):
+    return sorted(
+        [
+            folder_path
+            for folder_path in premium_photoshoot_dir.iterdir()
+            if folder_path.is_dir()
+            and folder_path.name.startswith("photoshoot_premium_")
+        ],
+        key=lambda path: path.stat().st_mtime,
+        reverse=True,
+    )
+
+
+def get_unique_folder_path(parent_dir, folder_name):
+    parent_path = Path(parent_dir)
+    candidate_path = parent_path / folder_name
+
+    if not candidate_path.exists():
+        return candidate_path
+
+    counter = 2
+
+    while True:
+        numbered_path = parent_path / f"{folder_name}_{counter}"
+
+        if not numbered_path.exists():
+            return numbered_path
+
+        counter += 1
+
+
+def get_premium_photoshoot_junk_dir(premium_photoshoot_dir):
+    junk_dir = premium_photoshoot_dir / "_Junk_Premium_Photoshoots"
+    junk_dir.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+    return junk_dir
+
+
+def move_path_to_junk(path_to_move, junk_root, folder_name=None):
+    path_to_move = Path(path_to_move)
+    junk_root = Path(junk_root)
+
+    if folder_name:
+        target_parent = junk_root / folder_name
+        target_parent.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+    else:
+        target_parent = junk_root
+
+    if path_to_move.is_dir():
+        destination = get_unique_folder_path(
+            target_parent,
+            path_to_move.name,
+        )
+    else:
+        destination = get_unique_image_path(
+            target_parent,
+            path_to_move.name,
+        )
+
+    shutil.move(
+        str(path_to_move),
+        str(destination),
+    )
+
+    return destination
+
+
+def render_completed_premium_sessions(premium_photoshoot_dir):
+    session_dirs = get_completed_session_dirs(
+        premium_photoshoot_dir
+    )
+
+    if not session_dirs:
+        return
+
+    st.markdown("---")
+    st.subheader("Completed Premium Photoshoots")
+
+    junk_dir = get_premium_photoshoot_junk_dir(
+        premium_photoshoot_dir
+    )
+
+    for session_dir in session_dirs:
+        session_images = get_image_files(
+            session_dir
+        )
+
+        if not session_images:
+            continue
+
+        with st.expander(
+            f"{session_dir.name} - {len(session_images)} image(s)",
+            expanded=(
+                st.session_state.get("open_premium_photoshoot_session")
+                == session_dir.name
+            ),
+        ):
+            st.caption(
+                str(session_dir)
+            )
+
+            delete_session_key = f"delete_premium_session_confirm_{session_dir.name}"
+
+            st.checkbox(
+                "Confirm delete entire photoshoot",
+                key=delete_session_key,
+            )
+
+            if st.button(
+                "Delete Entire Photoshoot",
+                key=f"delete_premium_session_{session_dir.name}",
+                use_container_width=True,
+                disabled=not st.session_state.get(delete_session_key, False),
+            ):
+                if session_dir.parent == premium_photoshoot_dir:
+                    move_path_to_junk(
+                        session_dir,
+                        junk_dir,
+                    )
+                    st.session_state["save_toast_message"] = (
+                        f"Moved premium photoshoot {session_dir.name} to junk"
+                    )
+                    st.session_state["open_premium_photoshoot_session"] = None
+                    st.rerun()
+
+            cols = st.columns(4)
+
+            for image_index, image_path in enumerate(session_images):
+                with cols[image_index % 4]:
+                    st.image(
+                        str(image_path),
+                        use_container_width=True,
+                    )
+
+                    if st.button(
+                        "Delete Image",
+                        key=(
+                            "delete_premium_session_image_"
+                            f"{session_dir.name}_{image_path.name}"
+                        ),
+                        use_container_width=True,
+                    ):
+                        move_path_to_junk(
+                            image_path,
+                            junk_dir,
+                            folder_name=session_dir.name,
+                        )
+                        st.session_state["open_premium_photoshoot_session"] = (
+                            session_dir.name
+                        )
+                        st.session_state["save_toast_message"] = (
+                            f"Moved {image_path.name} to junk"
+                        )
+                        st.rerun()
+
+
 def render_premium_photoshoot_queue(selected_output_dir):
-    premium_photoshoot_dir = get_premium_photoshoot_dir(selected_output_dir)
+    premium_photoshoot_dir = get_premium_queue_dir(selected_output_dir)
     premium_gallery_dir = get_premium_gallery_dir(selected_output_dir)
 
     premium_photoshoot_dir.mkdir(parents=True, exist_ok=True)
@@ -73,18 +266,15 @@ def render_premium_photoshoot_queue(selected_output_dir):
 
     st.markdown("---")
 
-    premium_photoshoot_images = sorted(
-        [
-            image_path
-            for image_path in premium_photoshoot_dir.iterdir()
-            if image_path.suffix.lower() in IMAGE_SUFFIXES
-        ],
-        key=lambda path: path.stat().st_mtime,
-        reverse=True,
+    premium_photoshoot_images = get_image_files(
+        premium_photoshoot_dir
     )
 
     if not premium_photoshoot_images:
         st.warning("No images currently in Premium Photoshoot Queue.")
+        render_completed_premium_sessions(
+            premium_photoshoot_dir
+        )
         return
 
     cols = st.columns(2)
@@ -108,8 +298,8 @@ def render_premium_photoshoot_queue(selected_output_dir):
             session_direction = st.text_area(
                 "Optional session direction",
                 placeholder=(
-                    "Example: warm couch session, GFE, same room, "
-                    "same lighting, gradually more intimate..."
+                    "Optional: keep night pool setting, closer angles, "
+                    "more playful expressions, same coverage..."
                 ),
                 height=80,
                 key=f"premium_session_direction_{image_key}",
@@ -123,10 +313,15 @@ def render_premium_photoshoot_queue(selected_output_dir):
                     key=f"generate_session_prompts_{image_key}",
                     use_container_width=True,
                 ):
-                    with st.spinner("Building continuity-locked GFE session prompts..."):
+                    with st.spinner("Analyzing reference and building continuity-locked session prompts..."):
+                        reference_context = analyze_premium_reference_image(
+                            image_path
+                        )
+
                         session_prompts = generate_premium_photoshoot_prompts(
                             session_count=session_count,
                             session_direction=session_direction,
+                            reference_context=reference_context,
                         )
 
                     st.session_state[prompts_key] = [
@@ -193,23 +388,35 @@ def render_premium_photoshoot_queue(selected_output_dir):
                                             use_container_width=True,
                                         )
 
+                    session_dir = create_premium_photoshoot_session_dir(
+                        premium_photoshoot_dir
+                    )
+
                     with st.spinner("Generating Premium Photoshoot Session with WAN 2.7..."):
                         render_results = generate_premium_images(
                             premium_prompts=st.session_state[prompts_key],
                             uploaded_file=LocalImageUpload(image_path),
                             selected_output_dir=selected_output_dir,
+                            premium_renderer=PREMIUM_PHOTOSHOOT_RENDERER,
                             progress_callback=update_progress,
+                            target_output_dir=session_dir,
                         )
 
                     generated_count = len(render_results.get("generated_images", []))
                     failed_count = len(render_results.get("failed_images", []))
+                    st.session_state["last_premium_session_dir"] = str(session_dir)
 
                     if failed_count == 0:
-                        st.success(f"Premium session complete. ✅ {generated_count} completed")
+                        move_reference_to_session(image_path, session_dir)
+                        st.success(
+                            f"Premium session complete. "
+                            f"{generated_count} completed. Saved to {session_dir}"
+                        )
                     else:
                         st.warning(
                             f"Premium session complete. "
-                            f"✅ {generated_count} completed ❌ {failed_count} failed"
+                            f"{generated_count} completed, {failed_count} failed. "
+                            f"Saved to {session_dir}"
                         )
 
             if st.session_state.get(prompts_key):
@@ -290,23 +497,35 @@ def render_premium_photoshoot_queue(selected_output_dir):
                                                 use_container_width=True,
                                             )
 
+                        session_dir = create_premium_photoshoot_session_dir(
+                            premium_photoshoot_dir
+                        )
+
                         with st.spinner("Generating Premium Session with WAN 2.7..."):
                             render_results = generate_premium_images(
                                 premium_prompts=st.session_state[prompts_key],
                                 uploaded_file=LocalImageUpload(image_path),
                                 selected_output_dir=selected_output_dir,
+                                premium_renderer=PREMIUM_PHOTOSHOOT_RENDERER,
                                 progress_callback=update_progress,
+                                target_output_dir=session_dir,
                             )
 
                         generated_count = len(render_results.get("generated_images", []))
                         failed_count = len(render_results.get("failed_images", []))
+                        st.session_state["last_premium_session_dir"] = str(session_dir)
 
                         if failed_count == 0:
-                            st.success(f"Premium session complete. ✅ {generated_count} completed")
+                            move_reference_to_session(image_path, session_dir)
+                            st.success(
+                                f"Premium session complete. "
+                                f"{generated_count} completed. Saved to {session_dir}"
+                            )
                         else:
                             st.warning(
                                 f"Premium session complete. "
-                                f"✅ {generated_count} completed ❌ {failed_count} failed"
+                                f"{generated_count} completed, {failed_count} failed. "
+                                f"Saved to {session_dir}"
                             )
                                         
 
@@ -344,3 +563,7 @@ def render_premium_photoshoot_queue(selected_output_dir):
                         "Removed from Premium Photoshoot Queue"
                     )
                     st.rerun()
+
+    render_completed_premium_sessions(
+        premium_photoshoot_dir
+    )

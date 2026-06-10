@@ -1,14 +1,34 @@
 from pathlib import Path
-import shutil
+
+from PIL import Image
 
 
-POSTED_MAIN_DIR = Path(
-    r"D:\Ava Blackthorne\Ready\Wavespeed\Posted_Main"
+POSTED_X_DIR = Path(
+    r"D:\Ava Blackthorne\Ready\Wavespeed\Posted-Socials\Posted_X"
 )
 
-POSTED_BACKUP_DIR = Path(
-    r"D:\Ava Blackthorne\Ready\Wavespeed\Posted_Backup"
-)
+
+def strip_metadata_and_save(
+    source_path,
+    destination_path,
+):
+    source_path = Path(source_path)
+    destination_path = Path(destination_path)
+
+    with Image.open(source_path) as image:
+        clean_image = Image.new(
+            image.mode,
+            image.size,
+        )
+
+        clean_image.putdata(
+            list(image.getdata())
+        )
+
+        clean_image.save(
+            destination_path,
+            format="PNG",
+        )
 
 
 def handle_successful_publish(
@@ -17,60 +37,18 @@ def handle_successful_publish(
 ):
     image_path = Path(image_path)
 
-    POSTED_MAIN_DIR.mkdir(
+    POSTED_X_DIR.mkdir(
         parents=True,
         exist_ok=True,
     )
 
-    POSTED_BACKUP_DIR.mkdir(
-        parents=True,
-        exist_ok=True,
-    )
-
-    published_to_main = (
-        "AvaBlackthorne"
-        in published_accounts
-    )
-
-    published_to_backup = (
-        "AvaBlackthorneX"
-        in published_accounts
-    )
-
-    if (
-        published_to_main
-        and published_to_backup
-    ):
-        shutil.copy2(
+    if published_accounts:
+        strip_metadata_and_save(
             image_path,
-            POSTED_MAIN_DIR
-            / image_path.name,
-        )
-
-        shutil.copy2(
-            image_path,
-            POSTED_BACKUP_DIR
+            POSTED_X_DIR
             / image_path.name,
         )
 
         image_path.unlink(
-            missing_ok=True
-        )
-
-    elif published_to_main:
-        shutil.move(
-            str(image_path),
-            str(
-                POSTED_MAIN_DIR
-                / image_path.name
-            ),
-        )
-
-    elif published_to_backup:
-        shutil.move(
-            str(image_path),
-            str(
-                POSTED_BACKUP_DIR
-                / image_path.name
-            ),
+            missing_ok=True,
         )

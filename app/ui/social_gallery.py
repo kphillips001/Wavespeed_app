@@ -5,6 +5,11 @@ from pathlib import Path
 import streamlit as st
 from PIL import Image
 
+from app.config.content_paths import (
+    get_premium_gallery_dir,
+    get_social_photoshoot_dir,
+)
+
 from app.services.caption_service import (
     generate_social_captions,
     regenerate_platform_captions,
@@ -22,12 +27,98 @@ from app.services.x_publish_service import (
     publish_to_x,
 )
 
+from app.services.instagram_phone_publish_service import (
+    copy_caption_to_phone_clipboard,
+)
+
+from app.services.instagram_publish_service import (
+    publish_to_instagram,
+)
+
 from app.services.published_image_service import (
     handle_successful_publish,
 )
 
 
 IMAGES_PER_PAGE = 24
+POSTED_SOCIALS_DIR = Path(
+    r"D:\Ava Blackthorne\Ready\Wavespeed\Posted-Socials"
+)
+POSTED_IG_DIR = POSTED_SOCIALS_DIR / "Posted_IG"
+
+
+def move_misplaced_instagram_post_to_ig_folder(image_path):
+    image_path = Path(image_path)
+    misplaced_path = POSTED_SOCIALS_DIR / image_path.name
+
+    if not misplaced_path.exists():
+        return
+
+    POSTED_IG_DIR.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    destination = get_unique_image_path(
+        POSTED_IG_DIR,
+        misplaced_path.name,
+    )
+
+    shutil.move(
+        str(misplaced_path),
+        str(destination),
+    )
+
+
+def generate_targeted_social_captions(
+    image_path,
+    platforms,
+):
+    try:
+        return generate_social_captions(
+            image_path=image_path,
+            platforms=platforms,
+        )
+
+    except TypeError as error:
+        if "platforms" not in str(error):
+            raise
+
+        caption_data = {}
+
+        if "x" in platforms:
+            x_data = generate_social_captions(
+                image_path=image_path,
+            )
+
+            caption_data["x"] = x_data.get(
+                "x",
+                [],
+            )
+
+            caption_data["image_summary"] = x_data.get(
+                "image_summary",
+                {},
+            )
+
+        if "instagram" in platforms:
+            instagram_data = regenerate_platform_captions(
+                image_path=image_path,
+                platform="instagram",
+            )
+
+            caption_data["instagram"] = instagram_data.get(
+                "instagram",
+                [],
+            )[:5]
+
+            if "image_summary" not in caption_data:
+                caption_data["image_summary"] = instagram_data.get(
+                    "image_summary",
+                    {},
+                )
+
+        return caption_data
 
 
 def render_gallery_image_grid(
@@ -157,9 +248,7 @@ def render_gallery_image_grid(
 
     visible_images = image_paths[start_index:end_index]
 
-    photoshoot_queue_dir = Path(
-        r"D:\Ava Blackthorne\Ready\Wavespeed\Photoshoot"
-    )
+    photoshoot_queue_dir = get_social_photoshoot_dir(selected_output_dir)
 
     photoshoot_queue_dir.mkdir(
         parents=True,
@@ -185,8 +274,8 @@ def render_gallery_image_grid(
                     use_container_width=True,
                 )
 
-                action_col1, action_col2, action_col3, action_col4, action_col5 = st.columns(
-                    [1, 1, 1, 1, 1]
+                action_col1, action_col2, action_col3, action_col4, action_col5, action_col6 = st.columns(
+                    [1, 1, 1, 1, 1, 1]
                 )
 
                 with action_col1:
@@ -228,6 +317,7 @@ def render_gallery_image_grid(
                             str(queue_path),
                         )
 
+                        st.session_state["photoshoot_queue_mode"] = "Social"
                         st.session_state["save_toast_message"] = (
                             "📸 Added image to Photoshoot Queue"
                         )
@@ -285,6 +375,38 @@ def render_gallery_image_grid(
 
                 with action_col5:
                     if st.button(
+                        "🔞",
+                        key=f"gallery_move_premium_{page_key}_{image_path}",
+                        help="Move to Premium Content Gallery",
+                        use_container_width=True,
+                    ):
+                        premium_gallery_dir = get_premium_gallery_dir(
+                            selected_output_dir
+                        )
+
+                        premium_gallery_dir.mkdir(
+                            parents=True,
+                            exist_ok=True,
+                        )
+
+                        destination = get_unique_image_path(
+                            premium_gallery_dir,
+                            image_path.name,
+                        )
+
+                        shutil.move(
+                            str(image_path),
+                            str(destination),
+                        )
+
+                        st.session_state["save_toast_message"] = (
+                            "🔞 Moved image to Premium Content Gallery"
+                        )
+
+                        st.rerun()
+
+                with action_col6:
+                    if st.button(
                         "🗑️",
                         key=f"gallery_delete_{page_key}_{image_path}",
                         help="Move to Junk",
@@ -324,6 +446,22 @@ def render_gallery_image_grid(
                     "Ready for captions"
                 )
 
+                target_col1, target_col2 = st.columns(2)
+
+                with target_col1:
+                    generate_for_x = st.checkbox(
+                        "X",
+                        value=True,
+                        key=f"caption_target_x_{safe_image_key}",
+                    )
+
+                with target_col2:
+                    generate_for_instagram = st.checkbox(
+                        "Instagram",
+                        value=False,
+                        key=f"caption_target_instagram_{safe_image_key}",
+                    )
+
                 action_col1, action_col2, action_col3, action_col4, action_col5 = st.columns(
                     [1, 1, 1, 1, 1]
                 )
@@ -337,13 +475,25 @@ def render_gallery_image_grid(
                     )
 
                 if generate_captions_clicked:
+                    selected_caption_platforms = []
+
+                    if generate_for_instagram:
+                        selected_caption_platforms.append("instagram")
+
+                    if generate_for_x:
+                        selected_caption_platforms.append("x")
+
+                    if not selected_caption_platforms:
+                        st.warning("Select X, Instagram, or both before generating captions.")
+                        st.stop()
 
                     with st.spinner(
                         "Generating captions..."
                     ):
 
-                        captions = generate_social_captions(
+                        captions = generate_targeted_social_captions(
                             image_path=image_path,
+                            platforms=selected_caption_platforms,
                         )
 
                     st.session_state[
@@ -369,6 +519,7 @@ def render_gallery_image_grid(
                             str(queue_path),
                         )
 
+                        st.session_state["photoshoot_queue_mode"] = "Social"
                         st.session_state["save_toast_message"] = (
                             "📸 Added image to Photoshoot Queue"
                         )
@@ -477,16 +628,131 @@ def render_gallery_image_grid(
                 if caption_data:
 
                     with st.expander(
-                        "Generated X Captions",
+                        "Generated Captions",
                         expanded=True,
                     ):
+                        instagram_captions = caption_data.get(
+                            "instagram",
+                            []
+                        )
 
                         x_captions = caption_data.get(
                             "x",
                             []
                         )
 
+                        selected_instagram_caption = None
+                        instagram_caption_text = ""
+
+                        if instagram_captions:
+
+                            st.markdown("### Instagram")
+
+                            instagram_captions = instagram_captions[:5]
+
+                            instagram_caption_options = [
+                                f"{idx}. {caption}"
+                                for idx, caption in enumerate(
+                                    instagram_captions,
+                                    start=1,
+                                )
+                            ]
+
+                            selected_instagram_caption = st.radio(
+                                "Instagram caption",
+                                options=instagram_caption_options,
+                                index=0,
+                                key=f"instagram_caption_{safe_image_key}",
+                            )
+
+                            instagram_guidance = st.text_input(
+                                "Instagram guidance",
+                                placeholder="Example: softer, prettier, more lifestyle, less flirty...",
+                                key=f"instagram_guidance_{safe_image_key}",
+                            )
+
+                            if st.button(
+                                "🔄 Regenerate Instagram Captions",
+                                key=f"regen_instagram_{safe_image_key}",
+                                use_container_width=True,
+                            ):
+
+                                with st.spinner(
+                                    "Regenerating Instagram captions..."
+                                ):
+
+                                    new_instagram = regenerate_platform_captions(
+                                        image_path=image_path,
+                                        platform="instagram",
+                                        extra_instructions=instagram_guidance,
+                                    )
+
+                                caption_data["instagram"] = new_instagram.get(
+                                    "instagram",
+                                    [],
+                                )
+
+                                st.session_state[
+                                    f"captions_{image_path}"
+                                ] = caption_data
+
+                                st.rerun()
+
+                            instagram_caption_text = selected_instagram_caption.split(
+                                ". ",
+                                1,
+                            )[1]
+
+                            ig_action_col1, ig_action_col2 = st.columns(2)
+
+                            with ig_action_col1:
+                                if st.button(
+                                    "📋 Copy IG Caption",
+                                    key=f"copy_instagram_{safe_image_key}",
+                                    use_container_width=True,
+                                ):
+                                    copy_caption_to_phone_clipboard(
+                                        instagram_caption_text
+                                    )
+
+                                    st.toast(
+                                        "Instagram caption copied",
+                                        icon="✅",
+                                    )
+
+                            with ig_action_col2:
+                                if st.button(
+                                    "📲 Push Image + Open IG",
+                                    key=f"push_instagram_{safe_image_key}",
+                                    use_container_width=True,
+                                ):
+                                    try:
+                                        publish_to_instagram(
+                                            image_path=image_path,
+                                            caption=instagram_caption_text,
+                                            remove_original=True,
+                                        )
+
+                                        move_misplaced_instagram_post_to_ig_folder(
+                                            image_path
+                                        )
+
+                                        st.success(
+                                            "Image pushed to phone and Instagram opened."
+                                        )
+
+                                        st.rerun()
+
+                                    except Exception as error:
+                                        st.error(
+                                            f"Instagram phone push failed: {error}"
+                                        )
+
+                            st.markdown("---")
+
                         if x_captions:
+
+                            st.markdown("### X")
 
                             st.markdown("#### Caption Options")
 
@@ -545,7 +811,7 @@ def render_gallery_image_grid(
 
                         publish_main = st.checkbox(
                             "AvaBlackthorne",
-                            value=True,
+                            value=bool(x_captions),
                             key=f"publish_main_{safe_image_key}",
                         )
 
@@ -584,10 +850,98 @@ def render_gallery_image_grid(
                                 key=f"backup_caption_{safe_image_key}",
                             )
 
+                        publish_both_clicked = False
+
+                        if instagram_captions and x_captions:
+                            publish_both_clicked = st.button(
+                                "🚀 Publish X + Push IG",
+                                key=f"publish_both_{safe_image_key}",
+                                use_container_width=True,
+                            )
+
+                        if publish_both_clicked:
+
+                            published_accounts = []
+
+                            try:
+                                if not publish_main and not publish_backup:
+                                    st.warning(
+                                        "Select at least one X account before publishing to both."
+                                    )
+                                    st.stop()
+
+                                publish_to_instagram(
+                                    image_path=image_path,
+                                    caption=instagram_caption_text,
+                                    remove_original=False,
+                                )
+
+                                move_misplaced_instagram_post_to_ig_folder(
+                                    image_path
+                                )
+
+                                if publish_main and selected_main_caption:
+
+                                    main_caption_text = selected_main_caption.split(
+                                        ". ",
+                                        1,
+                                    )[1]
+
+                                    publish_to_x(
+                                        image_path=image_path,
+                                        caption=main_caption_text,
+                                        account_name="AvaBlackthorne",
+                                    )
+
+                                    published_accounts.append(
+                                        "AvaBlackthorne"
+                                    )
+
+                                if publish_backup and selected_backup_caption:
+
+                                    backup_caption_text = selected_backup_caption.split(
+                                        ". ",
+                                        1,
+                                    )[1]
+
+                                    publish_to_x(
+                                        image_path=image_path,
+                                        caption=backup_caption_text,
+                                        account_name="AvaBlackthorneX",
+                                    )
+
+                                    published_accounts.append(
+                                        "AvaBlackthorneX"
+                                    )
+
+                                if published_accounts:
+
+                                    handle_successful_publish(
+                                        image_path=image_path,
+                                        published_accounts=published_accounts,
+                                    )
+
+                                    st.session_state["save_toast_message"] = (
+                                        "🚀 Published to IG and X"
+                                    )
+
+                                    st.rerun()
+
+                                else:
+                                    st.warning(
+                                        "Select at least one X account before publishing to both."
+                                    )
+
+                            except Exception as error:
+                                st.error(
+                                    f"IG + X publishing failed: {error}"
+                                )
+
                         publish_clicked = st.button(
                             "🚀 Publish Selected",
                             key=f"publish_x_{safe_image_key}",
                             use_container_width=True,
+                            disabled=not bool(x_captions),
                         )
 
                         if publish_clicked:

@@ -7,7 +7,6 @@ from PIL import Image
 
 from app.config.content_paths import (
     get_premium_gallery_dir,
-    get_premium_photoshoot_dir,
     )
 
 from app.ui.image_file_utils import (
@@ -15,13 +14,21 @@ from app.ui.image_file_utils import (
     get_unique_image_path,
 )
 
+from app.ui.staging_area import (
+    move_image_to_staged,
+)
+
 
 IMAGES_PER_PAGE = 24
 
 
+def get_premium_queue_dir(selected_output_dir):
+    return Path(selected_output_dir) / "Premium" / "Photoshoot"
+
+
 def render_premium_gallery(selected_output_dir):
     premium_gallery_dir = get_premium_gallery_dir(selected_output_dir)
-    premium_photoshoot_dir = get_premium_photoshoot_dir(selected_output_dir)
+    premium_photoshoot_dir = get_premium_queue_dir(selected_output_dir)
     
     premium_gallery_dir.mkdir(parents=True, exist_ok=True)
     premium_photoshoot_dir.mkdir(parents=True, exist_ok=True)
@@ -169,11 +176,33 @@ def render_premium_gallery(selected_output_dir):
                 use_container_width=True,
             )
 
-            action_col1, action_col2, action_col3, action_col4, action_col5, action_col6 = st.columns(
-                [1, 1, 1, 1, 1, 1]
+            action_col1, action_col2, action_col3, action_col4, action_col5, action_col6, action_col7 = st.columns(
+                [1, 1, 1, 1, 1, 1, 1]
             )
 
             with action_col1:
+                if st.button(
+                    "📦",
+                    key=f"premium_gallery_stage_{safe_image_key}",
+                    help="Move to Staging Area",
+                    use_container_width=True,
+                ):
+                    success = move_image_to_staged(
+                        image_path
+                    )
+
+                    if success:
+                        st.session_state["save_toast_message"] = (
+                            "📦 Moved image to Staging Area"
+                        )
+                    else:
+                        st.session_state["save_toast_message"] = (
+                            "⚠️ Staging Area is full (10 images max)"
+                        )
+
+                    st.rerun()
+
+            with action_col2:
                 if st.button(
                     "📸",
                     key=f"premium_gallery_queue_{safe_image_key}",
@@ -190,13 +219,14 @@ def render_premium_gallery(selected_output_dir):
                         str(destination),
                     )
 
+                    st.session_state["photoshoot_queue_mode"] = "Premium"
                     st.session_state["save_toast_message"] = (
                         "📸 Moved image to Premium Photoshoot Queue"
                     )
 
                     st.rerun()
 
-            with action_col2:
+            with action_col3:
                 if st.button(
                     "🎨",
                     key=f"premium_gallery_multi_edit_{safe_image_key}",
@@ -233,7 +263,7 @@ def render_premium_gallery(selected_output_dir):
 
                     st.rerun()
 
-            with action_col3:
+            with action_col4:
                 if st.button(
                     "🎬",
                     key=f"premium_gallery_video_{safe_image_key}",
@@ -242,7 +272,7 @@ def render_premium_gallery(selected_output_dir):
                 ):
                     st.toast("🎬 Video Studio coming soon!")
 
-            with action_col4:
+            with action_col5:
                 if st.button(
                     "➡️",
                     key=f"premium_gallery_move_social_{safe_image_key}",
@@ -265,7 +295,7 @@ def render_premium_gallery(selected_output_dir):
 
                     st.rerun()
 
-            with action_col5:
+            with action_col6:
                 if st.button(
                     "💎",
                     key=f"premium_gallery_fanvue_wall_{safe_image_key}",
@@ -294,7 +324,7 @@ def render_premium_gallery(selected_output_dir):
 
                     st.rerun()
 
-            with action_col6:
+            with action_col7:
                 if st.button(
                     "🗑️",
                     key=f"premium_gallery_delete_{safe_image_key}",

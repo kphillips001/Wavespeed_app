@@ -9,8 +9,8 @@ from app.services.instagram_phone_publish_service import (
 )
 
 
-POSTED_SOCIALS_DIR = Path(
-    r"D:\Ava Blackthorne\Ready\Wavespeed\Posted-Socials"
+POSTED_IG_DIR = Path(
+    r"D:\Ava Blackthorne\Ready\Wavespeed\Posted-Socials\Posted_IG"
 )
 
 
@@ -42,17 +42,18 @@ def strip_metadata_and_save(
 def publish_to_instagram(
     image_path,
     caption,
+    remove_original=True,
 ):
 
     image_path = Path(image_path)
 
-    POSTED_SOCIALS_DIR.mkdir(
+    POSTED_IG_DIR.mkdir(
         parents=True,
         exist_ok=True,
     )
 
     image_destination = (
-        POSTED_SOCIALS_DIR /
+        POSTED_IG_DIR /
         image_path.name
     )
 
@@ -88,10 +89,10 @@ def publish_to_instagram(
     open_instagram_on_phone()
 
     #
-    # 5. Remove original staged image
+    # 5. Optionally remove original staged image
     #
 
-    if image_path.exists():
+    if remove_original and image_path.exists():
 
         image_path.unlink()
 
@@ -100,7 +101,10 @@ def publish_to_instagram(
     print("====================")
     print(f"Clean image saved:\n{image_destination}")
     print("Clean image pushed to phone")
-    print("Original staged image removed")
+    if remove_original:
+        print("Original staged image removed")
+    else:
+        print("Original staged image preserved")
     print("Caption copied to Windows clipboard")
 
     return True

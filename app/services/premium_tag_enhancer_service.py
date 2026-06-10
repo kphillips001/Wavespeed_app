@@ -25,6 +25,10 @@ Keep the user's original idea, but make it richer, more specific, and more visua
 Focus on:
 - wardrobe and styling
 - required clothing or nudity tags
+- reference body continuity
+- full natural D-cup bust continuity
+- feminine hourglass body continuity
+- rich dark tan skin continuity
 - broad location theme
 - lighting mood
 - textures
@@ -95,6 +99,8 @@ Important rules:
 - Do NOT use bullets or numbering.
 - Do NOT make it vague or conceptual.
 - Prefer concrete visual tags over abstract phrases.
+- Always include body continuity tags: full natural D-cup bust, feminine hourglass body, same waist-to-hip proportions, rich dark tan skin.
+- Do NOT soften the D-cup requirement into generic words like curvy, attractive, or feminine.
 
 Example input:
 boat, water, lake, cabin
@@ -119,6 +125,10 @@ Keep the user's original idea, but add a stronger creative direction with richer
 Focus on:
 - unexpected but realistic setting details
 - wardrobe and styling
+- reference body continuity
+- full natural D-cup bust continuity
+- feminine hourglass body continuity
+- rich dark tan skin continuity
 - pose and body positioning
 - environment details
 - props
@@ -137,6 +147,8 @@ Important rules:
 - Do NOT use bullets or numbering.
 - Do NOT make it vague or conceptual.
 - Prefer concrete visual tags over abstract phrases.
+- Always include body continuity tags: full natural D-cup bust, feminine hourglass body, same waist-to-hip proportions, rich dark tan skin.
+- Do NOT soften the D-cup requirement into generic words like curvy, attractive, or feminine.
 
 Example input:
 boat, water, lake, cabin

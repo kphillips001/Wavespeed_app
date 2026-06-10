@@ -38,9 +38,36 @@ Use these to vary:
 def build_premium_grok_prompt(
     creative_tags: str,
     prompt_count: int = 10,
+    optional_direction: str | None = None,
 ) -> str:
 
     shot_type_context = build_premium_shot_type_context()
+    direction_text = (optional_direction or "").strip()
+    direction_instruction = (
+        f"""
+OPTIONAL SETTING / DIRECTION:
+The user supplied this setting/framing direction:
+{direction_text}
+
+Treat this as mandatory creative direction for the whole batch.
+If it includes framing language such as full body, wide shot, environmental shot,
+mirror selfie, waist-up, close-up, medium shot, or upper-thigh framing, follow that
+framing direction even when it differs from the default close-framing preference.
+Still preserve her full natural D-cup bust, feminine hourglass body, same
+waist-to-hip proportions, rich dark tan skin, and recognizable body structure.
+"""
+        if direction_text
+        else """
+OPTIONAL SETTING / DIRECTION:
+No setting or framing direction was supplied.
+Treat this as a random mixed batch, not one continuous photoshoot.
+Each prompt should use a distinct standalone setting, lighting setup, and scene concept.
+Default to close creator-style framing, but vary the exact crop naturally across
+close-up, close-medium, waist-up, upper-thigh, and head-to-thigh compositions.
+Do not repeat the same room, bed, bathroom, pool, lighting setup, or visual theme
+across the whole batch unless the user tags specifically require it.
+"""
+    )
 
     return f"""
 I need a list of {prompt_count} high-quality WAN 2.7 image-edit prompts.
@@ -157,6 +184,8 @@ For lingerie, teasing, or premium non-nude prompts:
 
 USER CREATIVE TAGS:
 {creative_tags}
+
+{direction_instruction}
 
 IMPORTANT:
 
@@ -1569,6 +1598,11 @@ Do not default to:
 Some prompts should feel:
 - playful
 - teasing
+- happy
+- excited
+- bright
+- warm
+- flirtatious
 - relaxed
 - dreamy
 - mischievous
@@ -1581,7 +1615,51 @@ Not every prompt should use:
 - direct eye contact
 - inviting gaze
 
+FACIAL EXPRESSION AND PERSONALITY REQUIREMENT:
+
+Give her visible personality and life in every prompt.
+
+Most prompts should make her look warm, playful, quietly happy, confident,
+flirty, amused, or genuinely engaged.
+Expressions must look candid and believable, not forced, fake, exaggerated,
+plastic, or overacted.
+Favor subtle eye warmth, relaxed cheeks, small asymmetry, natural mouth shape,
+and in-the-moment micro-expressions over big posed smiles.
+
+Use a varied expression palette such as:
+
+- soft genuine smile that reaches her eyes
+- subtle playful smile
+- candid amused half-smile
+- warm relaxed expression
+- teasing eye contact
+- relaxed mischievous smirk
+- coy over-the-shoulder half-smile
+- flirty slight parted-lip smile
+- confident inviting gaze
+- candid laugh caught mid-moment
+- playful raised eyebrow
+- soft seductive smile
+- relaxed happy glow
+
+Avoid:
+- blank expression
+- neutral face
+- bored face
+- monotone expression
+- mannequin-like face
+- lifeless stare
+- forced smile
+- fake grin
+- overly toothy smile
+- frozen pageant smile
+- uncanny perfect smile
+- exaggerated open-mouth acting
+- dead eyes with a pasted-on smile
+- the same calm smile in every prompt
+
 Vary emotional presentation naturally.
+Do not repeat the same facial gesture across the batch.
 
 - Return exactly {prompt_count} prompts
 - Number the prompts
@@ -1592,9 +1670,11 @@ Vary emotional presentation naturally.
 - Every prompt must explicitly include: rich dark tan skin
 - Every prompt must visibly preserve the same body size, bust size, and recognizable body structure from the reference image
 - Every prompt must include concrete wardrobe or lingerie detail unless nudity was explicitly requested by the user
-- Every prompt must use close-up, close-medium, waist-up, upper-thigh, or head-to-thigh creator framing unless the user specifically asks for a wide shot
+- Every prompt must use close-up, close-medium, waist-up, upper-thigh, or head-to-thigh creator framing by default, unless the user specifically asks for a different framing style in the Optional Setting / Direction field or creative tags
 - Every prompt must keep her body large in frame and avoid distant scenery-dominant composition
 - Every prompt must include pose, body orientation, camera angle, close shot distance, crop, lighting, expression, and environment detail
+- Every prompt must include a clearly described natural facial expression with warm, playful, quietly happy, confident, teasing, flirty, or genuinely engaged energy
+- Most prompts should make her feel alive and personable, not calm, blank, bored, monotone, expressionless, fake-smiling, or overacted
 - Every prompt must include realistic texture detail such as skin, hair, fabric, shadows, reflections, bedding, furniture, window light, or room surfaces where appropriate
 - Every prompt must be detailed enough to generate a complete premium creator image without needing assumptions
 - Every prompt must feel close, intimate, realistic, and premium, not vague or generic

@@ -72,10 +72,14 @@ Skin tone rules:
 - do not make her pale, washed out, fair-skinned, or red-haired
 
 Framing rules:
-- favor close-up, close-medium, waist-up, upper-thigh, or head-to-thigh creator framing
+- favor tight medium, close-up, waist-up, upper-thigh, head-to-hips, or head-to-upper-thigh creator framing
+- make her upper body and torso visually dominant in the composition
+- keep the camera close enough that her full natural D-cup bust, hourglass waist, and dark tan skin are obvious
 - keep her body large in frame, with the background supporting the scene rather than dominating it
+- avoid wide bed shots, wide room shots, distant mattress compositions, scenery-dominant framing, or any framing where the bed/furniture is more visually important than her body
 - avoid distant full-body compositions unless the user explicitly asks for a wide shot
 - do not crop out the body cues needed to preserve her D-cup bust, hourglass shape, and tan skin
+- do not use side/rear all-fours angles that hide or minimize the bust; if using side/rear body orientation, keep the chest/bust still visible and prominent
 """
 
 TOPLESS_VISIBILITY_RULES = """
@@ -103,23 +107,73 @@ The AI may expand and enrich them but must not ignore or replace them.
 """
 
 SETTING_RULES = """
-OPTIONAL SETTING RULES
-If the Optional Setting field is blank: 
-- Automatically generate diverse, realistic locations and micro-settings.
-- Vary bedrooms, beds, times of day (morning light through windows, afternoon, warm evening lamps, night time, etc.).
-- Avoid repeating the exact same room or bed across the batch.
+OPTIONAL SETTING / DIRECTION RULES
+If the Optional Setting / Direction field is blank: 
+- Treat each prompt as its own standalone scene, not one continuous photoshoot.
+- Randomize realistic locations and micro-settings across the batch.
+- Vary indoor, outdoor, luxury, casual, hotel, bathroom, shower, pool, balcony, kitchen, living room, studio, car, patio, vacation, nightlife, and private-home concepts when appropriate.
+- Vary time of day, lighting style, mood, background textures, props, and camera angle.
+- Avoid repeating the same room, bed, bathroom, tub, lighting setup, or visual theme across the batch.
+- Do not make the batch look like one session in one location unless the user specifically supplies that setting.
 
-If the Optional Setting field is supplied:
-- Stay centered on that general setting but still vary micro-locations, angles, and lighting within it.
+If the Optional Setting / Direction field is supplied:
+- Treat it as mandatory creative direction for the batch.
+- Stay centered on any supplied setting, but still vary micro-locations, angles, and lighting within it.
+- If it includes framing language such as full body, wide shot, environmental shot, mirror selfie, waist-up, close-up, medium shot, or upper-thigh framing, follow that framing direction even when it differs from the default close-framing preference.
+- Still preserve her full natural D-cup bust, feminine hourglass body, same waist-to-hip proportions, rich dark tan skin, and recognizable body structure.
 """
 
 PROMPT_DIVERSITY_RULES = """
 PROMPT DIVERSITY RULES
 For every batch of prompts:
-- Create natural variety in environment even when the main action is the same (e.g. "masturbation on bed" should show different beds, different bedrooms, different lighting conditions, different times of day).
+- Create natural variety in environment even when the main action is the same.
 - Vary poses, camera angles, framing, and facial expressions.
+- Prefer chest-forward, upper-body-forward, tight medium crops over wide bedroom or wide bed compositions.
+- Avoid repeatedly using wide beds, large mattresses, broad room descriptions, or distant all-fours shots that make the body continuity less visible.
 - Generate the feeling of authentic, private, "in the moment" intimate scenes rather than a uniform photoshoot.
-- Maintain the same woman and core action while changing the surroundings around her.
+- Maintain the same woman and core body continuity, but randomize the scene concept unless the user supplies a fixed setting.
+- Do not repeat the same location type more than twice in a batch of 10.
+- Do not let "bed", "hotel room", or "bathroom" dominate the whole batch unless the user explicitly asks for that.
+"""
+
+EXPRESSION_PERSONALITY_RULES = """
+FACIAL EXPRESSION AND PERSONALITY RULES
+Every generated prompt must give her a visible, emotionally alive facial expression.
+Do not default to blank, neutral, bored, monotone, mannequin-like, or emotionless expressions.
+Across the batch, vary expressions naturally with a strong bias toward alluring, playful, teasing, warm, confident, and genuinely engaged energy.
+Expressions must look candid and believable, not forced, fake, exaggerated, plastic, or overacted.
+Favor subtle eye warmth, relaxed cheeks, small asymmetry, natural mouth shape, and in-the-moment micro-expressions over big posed smiles.
+
+Use a varied expression palette such as:
+- soft genuine seductive smile
+- subtle playful smile with warmth in her eyes
+- private teasing eye contact
+- relaxed mischievous smirk
+- flirty slight parted-lip smile
+- confident warm gaze
+- coy over-the-shoulder half-smile
+- breathless pleasure expression with natural relaxed mouth
+- soft moaning expression with visible emotion
+- half-lidded seductive look with a hint of a smile
+- quietly delighted, turned-on, in-the-moment expression
+
+Use stronger expressions only occasionally, such as:
+- candid laugh caught mid-moment
+- excited smile that reaches her eyes
+- playful grin that still looks natural
+
+Avoid:
+- forced smile
+- fake grin
+- overly toothy smile
+- frozen pageant smile
+- uncanny perfect smile
+- exaggerated open-mouth acting
+- dead eyes with a pasted-on smile
+
+Most prompts should feel alive, warm, playful, alluring, or quietly excited rather than calm and expressionless.
+Explicit prompts should lean more alluring, sexy, teasing, seductive, and visibly engaged while staying realistic.
+Vary the expression in every prompt and do not repeat the same facial gesture across the batch.
 """
 # ==================== HELPER FUNCTIONS ====================
 TOPLESS_TERMS = ["topless", "bare breasts", "bare breast", "nude", "nudity", "naked", "upper body uncovered", "no upper-body clothing", "no bra", "no top"]
@@ -129,7 +183,9 @@ NIPPLE_VISIBILITY_PHRASE = "topless with bare breasts and perky visible nipples 
 NUDITY_GROOMING_PHRASE = "no pubic hair, fully smooth pubic area"
 BODY_CONTINUITY_PHRASE = (
     "rich dark tan skin, full natural D-cup bust, feminine hourglass body, "
-    "same waist-to-hip proportions, close creator-style framing with her body large in frame"
+    "same waist-to-hip proportions, tight medium head-to-upper-thigh creator framing, "
+    "upper body and torso dominant, chest and bust clearly visible, body large in frame, "
+    "no wide room or wide bed composition"
 )
 
 def normalize_prompt_suffix(prompt: str, suffix: str = QUALITY_SUFFIX) -> str:
@@ -138,6 +194,12 @@ def normalize_prompt_suffix(prompt: str, suffix: str = QUALITY_SUFFIX) -> str:
         return ""
     cleaned_prompt = cleaned_prompt.rstrip(" ,.")
     normalized_suffix = suffix.strip().rstrip(" ,.")
+    cleaned_prompt = re.sub(
+        re.escape(normalized_suffix),
+        "",
+        cleaned_prompt,
+        flags=re.IGNORECASE,
+    ).rstrip(" ,.")
     if cleaned_prompt.lower().endswith(normalized_suffix.lower()):
         return cleaned_prompt
     return f"{cleaned_prompt}, {normalized_suffix}"
@@ -174,19 +236,28 @@ def normalize_body_continuity(prompt: str) -> str:
         return ""
 
     prompt_lower = cleaned_prompt.lower()
-    required_terms = [
-        "rich dark tan",
-        "d-cup",
-        "hourglass",
-        "waist-to-hip",
-        "close",
+    required_fragments = [
+        ("rich dark tan", "rich dark tan skin"),
+        ("d-cup", "full natural D-cup bust"),
+        ("hourglass", "feminine hourglass body"),
+        ("waist-to-hip", "same waist-to-hip proportions"),
+        ("tight medium", "tight medium head-to-upper-thigh creator framing"),
+        ("upper body", "upper body and torso dominant"),
+        ("body large in frame", "body large in frame"),
+        ("wide room", "no wide room or wide bed composition"),
     ]
 
-    if all(term in prompt_lower for term in required_terms):
+    missing_fragments = [
+        fragment
+        for term, fragment in required_fragments
+        if term not in prompt_lower
+    ]
+
+    if not missing_fragments:
         return cleaned_prompt
 
     cleaned_prompt = cleaned_prompt.rstrip(" ,.")
-    return f"{cleaned_prompt}, {BODY_CONTINUITY_PHRASE}"
+    return f"{cleaned_prompt}, {', '.join(missing_fragments)}"
 
 def split_user_tags(raw_tags: str) -> list[str]:
     if not raw_tags:
@@ -208,10 +279,13 @@ def build_explicit_enhancer_instruction(
 ) -> str:
     setting_text = (optional_setting or "").strip()
     setting_instruction = (
-        f"The user supplied this optional setting: {setting_text}. "
-        "Preserve it as a mandatory setting anchor."
+        f"The user supplied this optional setting/framing direction: {setting_text}. "
+        "Preserve it as a mandatory creative direction."
         if setting_text
-        else "No setting was supplied. Add varied setting ideas automatically."
+        else (
+            "No setting was supplied. Do not choose one fixed setting. "
+            "Create a varied setting pool with multiple distinct standalone scene ideas."
+        )
     )
     return f"""
 You are an expert at creating realistic and intimate NSFW image prompts for Seedream 4.5.
@@ -236,10 +310,14 @@ def build_explicit_prompt_instruction(
 ) -> str:
     setting_text = (optional_setting or "").strip()
     setting_instruction = (
-        f"Optional setting supplied by user: {setting_text}. "
-        "Treat this as mandatory and keep all prompts centered on that setting."
+        f"Optional setting/framing direction supplied by user: {setting_text}. "
+        "Treat this as mandatory. If it includes camera distance or framing instructions, follow them."
         if setting_text
-        else "No setting supplied by user. Default to luxurious modern bedroom with natural lighting."
+        else (
+            "No setting supplied by user. Treat this as a random mixed batch: "
+            "each prompt should use a distinct standalone setting, lighting setup, "
+            "and scene concept while keeping the camera close and the background secondary."
+        )
     )
 
     return f"""
@@ -255,7 +333,9 @@ Enhanced tags:
 {EXPLICIT_ACTION_RULES}
 {TOPLESS_VISIBILITY_RULES}
 {NUDITY_GROOMING_RULES}
+{SETTING_RULES}
 {PROMPT_DIVERSITY_RULES}
+{EXPRESSION_PERSONALITY_RULES}
 
 Output requirements:
 - Generate exactly {prompt_count} numbered prompts (1., 2., 3. etc.)
@@ -265,12 +345,17 @@ Output requirements:
 - Every prompt must explicitly include full natural D-cup bust
 - Every prompt must explicitly include feminine hourglass body
 - Every prompt must explicitly include same waist-to-hip proportions
-- Every prompt must use close-up, close-medium, waist-up, upper-thigh, or head-to-thigh creator framing unless the user specifically asks for a wide shot
+- Every prompt must use tight medium, close-up, waist-up, head-to-hips, or head-to-upper-thigh creator framing by default, unless the user specifically asks for a different framing style in the Optional Setting / Direction field or explicit tags
+- Every prompt must make her upper body and torso visually dominant
+- Every prompt must keep her full natural D-cup bust visibly prominent and unobstructed when the upper body is visible
 - Every prompt must keep her body large in frame
+- Every prompt must avoid wide room shots, wide bed shots, distant mattress compositions, and background-dominant framing
 - Create the feeling of private, "in the moment" intimate photos taken just for the viewer
 - Use natural, believable lighting in every prompt
 - Feature realistic dildo insertion and arousal when relevant
 - Maintain natural anatomy and sensual expressions
+- Every prompt must include a clearly described natural facial expression with alluring, teasing, warm, playful, seductive, quietly excited, or genuinely engaged energy
+- Do not use blank, neutral, bored, monotone, mannequin-like, emotionless, forced-smile, fake-grin, or overacted facial expressions
 - End every single prompt with: , {QUALITY_SUFFIX}
 
 Keep the tone sensual and realistic. Avoid cartoonish exaggeration or overly vulgar language.
@@ -332,12 +417,20 @@ def generate_explicit_prompts(
         if not prompt.strip():
             continue
         if force_topless_visibility:
-            prompt = f"{prompt.rstrip(' ,.')}, {NIPPLE_VISIBILITY_PHRASE}"
+            prompt = (
+                normalize_topless_visibility(prompt)
+                if references_topless_content(prompt)
+                else f"{prompt.rstrip(' ,.')}, {NIPPLE_VISIBILITY_PHRASE}"
+            )
         else:
             prompt = normalize_topless_visibility(prompt)
 
         if force_nudity_grooming:
-            prompt = f"{prompt.rstrip(' ,.')}, {NUDITY_GROOMING_PHRASE}"
+            prompt = (
+                normalize_nudity_grooming(prompt)
+                if references_nude_lower_body_content(prompt)
+                else f"{prompt.rstrip(' ,.')}, {NUDITY_GROOMING_PHRASE}"
+            )
         else:
             prompt = normalize_nudity_grooming(prompt)
 

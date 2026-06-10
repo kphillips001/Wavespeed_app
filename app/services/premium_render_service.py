@@ -45,6 +45,27 @@ PREMIUM_RENDERER_MODELS = {
 }
 
 
+PREMIUM_RENDER_BODY_LOCK = """
+FINAL REFERENCE BODY LOCK - NON-NEGOTIABLE:
+Use the reference image as the body-size source of truth.
+Preserve the exact same woman, face, long dark hair, rich dark tan skin, body size, body weight, and recognizable silhouette from the reference image.
+Her breasts must remain visibly large natural D-cup breasts in the generated image, with full D-cup breast volume, full upper and lower breast fullness, rounded natural breast shape, visible bust projection, and natural cleavage when clothing or framing allows it.
+Do not reduce breast size. Do not make her smaller-busted. Do not flatten her chest. Do not make her appear B-cup or small-chested.
+Preserve her feminine hourglass body, same waist-to-hip proportions, hip width, thigh proportions, shoulder width, and bust-to-waist ratio.
+Keep her body large in frame with close creator-style framing by default so the D-cup bust, hourglass shape, and dark tan skin remain visually obvious, unless the prompt explicitly requests full-body, wide, environmental, or another specific framing style.
+Preserve the prompt's facial expression direction. She should look emotionally alive with natural, candid warmth: subtle eye warmth, relaxed cheeks, small asymmetry, natural mouth shape, and believable in-the-moment expression. Avoid blank, bored, monotone, mannequin-like, emotionless, forced-smile, fake-grin, overly toothy, plastic, or overacted facial expressions.
+""".strip()
+
+
+def enforce_premium_render_body_lock(prompt_text):
+    cleaned_prompt = (prompt_text or "").strip()
+
+    if not cleaned_prompt:
+        return ""
+
+    return f"{cleaned_prompt}\n\n{PREMIUM_RENDER_BODY_LOCK}"
+
+
 def save_uploaded_reference_to_temp(uploaded_file):
     if isinstance(uploaded_file, (str, Path)):
         source_path = Path(uploaded_file)
@@ -94,6 +115,7 @@ def generate_premium_images(
     selected_output_dir,
     premium_renderer,
     progress_callback=None,
+    target_output_dir=None,
 ):
     load_dotenv()
 
@@ -112,8 +134,15 @@ def generate_premium_images(
     if not premium_prompts:
         raise ValueError("No premium prompts available.")
 
-    premium_gallery_dir = get_premium_gallery_dir(
-        selected_output_dir
+    premium_gallery_dir = (
+        Path(target_output_dir)
+        if target_output_dir
+        else get_premium_gallery_dir(selected_output_dir)
+    )
+    output_label = (
+        "Premium Photoshoot"
+        if target_output_dir
+        else "Premium Gallery"
     )
 
     Path(premium_gallery_dir).mkdir(
@@ -169,6 +198,10 @@ def generate_premium_images(
             if not prompt_text:
                 continue
 
+            render_prompt_text = enforce_premium_render_body_lock(
+                prompt_text
+            )
+
             if progress_callback:
                 progress_callback(
                     index - 1,
@@ -183,7 +216,7 @@ def generate_premium_images(
 
             try:
                 request_id = submit_wavespeed_task(
-                    prompt=prompt_text,
+                    prompt=render_prompt_text,
                     image_url=reference_url,
                     api_key=wavespeed_key,
                     model_url=selected_model["endpoint"],
@@ -211,7 +244,7 @@ def generate_premium_images(
                 generated_images.append(
                     {
                         "id": f"premium_image_{index}",
-                        "prompt": prompt_text,
+                        "prompt": render_prompt_text,
                         "url": str(local_image_path),
                         "source_url": output_url,
                         "local_path": str(local_image_path),
@@ -224,7 +257,7 @@ def generate_premium_images(
                 failed_images.append(
                     {
                         "id": f"premium_image_{index}",
-                        "prompt": prompt_text,
+                        "prompt": render_prompt_text,
                         "renderer": selected_model["name"],
                         "error": str(error),
                         "status": "failed",
@@ -236,7 +269,7 @@ def generate_premium_images(
                     index,
                     total_prompts,
                     (
-                        f"Saved {len(generated_images)} to Premium Gallery, "
+                        f"Saved {len(generated_images)} to {output_label}, "
                         f"failed {len(failed_images)}."
                     ),
                     generated_images,

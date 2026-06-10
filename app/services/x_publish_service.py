@@ -1,5 +1,8 @@
 import os
+import tempfile
+from pathlib import Path
 
+from PIL import Image
 import tweepy
 
 
@@ -47,6 +50,35 @@ def get_x_credentials(account_name):
     return credentials
 
 
+def strip_metadata_to_temp_image(image_path):
+    image_path = Path(image_path)
+
+    temp_file = tempfile.NamedTemporaryFile(
+        delete=False,
+        suffix=".png",
+    )
+
+    temp_path = Path(temp_file.name)
+    temp_file.close()
+
+    with Image.open(image_path) as image:
+        clean_image = Image.new(
+            image.mode,
+            image.size,
+        )
+
+        clean_image.putdata(
+            list(image.getdata())
+        )
+
+        clean_image.save(
+            temp_path,
+            format="PNG",
+        )
+
+    return temp_path
+
+
 def publish_to_x(
     image_path,
     caption,
@@ -74,9 +106,19 @@ def publish_to_x(
         access_token_secret=credentials["access_token_secret"],
     )
 
-    media = api.media_upload(
-        str(image_path)
+    clean_image_path = strip_metadata_to_temp_image(
+        image_path
     )
+
+    try:
+        media = api.media_upload(
+            str(clean_image_path)
+        )
+
+    finally:
+        clean_image_path.unlink(
+            missing_ok=True
+        )
 
     tweet = client.create_tweet(
         text=caption,

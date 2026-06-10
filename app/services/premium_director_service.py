@@ -37,6 +37,7 @@ def split_numbered_prompts(raw_text) -> list[str]:
 def generate_premium_prompts(
     creative_tags: str,
     prompt_count: int = 10,
+    optional_direction: str | None = None,
 ) -> list[str]:
 
     api_key = os.getenv("GROK_API_KEY")
@@ -49,6 +50,7 @@ def generate_premium_prompts(
     grok_instruction_prompt = build_premium_grok_prompt(
         creative_tags=creative_tags,
         prompt_count=prompt_count,
+        optional_direction=optional_direction,
     )
 
     raw_response = generate_prompts_with_grok(

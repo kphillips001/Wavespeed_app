@@ -36,7 +36,6 @@ from dotenv import load_dotenv
 
 from app.config.content_paths import (
     ensure_content_dirs,
-    get_premium_photoshoot_dir,
     get_social_photoshoot_dir,
 )
 
@@ -74,6 +73,13 @@ from app.services.instagram_phone_publish_service import (
 
 from app.services.instagram_publish_service import (
     publish_to_instagram,
+)
+
+from app.services.phone_device_service import (
+    PhoneDeviceError,
+    close_phone_device,
+    is_process_running,
+    launch_phone_device,
 )
 
 from app.services.session_reset_service import (
@@ -126,6 +132,10 @@ from app.ui.multi_edit_studio import (
 
 from app.ui.premium_gallery import (
     render_premium_gallery,
+)
+
+from app.ui.premium_photoshoot_queue import (
+    render_premium_photoshoot_queue,
 )
 
 from app.ui.premium_studio_page import (
@@ -238,6 +248,41 @@ def save_generated_images(
         saved_paths.append(str(image_path))
 
     return saved_paths
+
+
+def render_phone_device_toggle():
+    pid = st.session_state.get("phone_device_scrcpy_pid")
+    is_running = is_process_running(pid)
+
+    if not is_running:
+        st.session_state["phone_device_scrcpy_pid"] = None
+
+    button_label = (
+        "🌙 Close Phone Device"
+        if is_running
+        else "📱 Launch Phone Device"
+    )
+
+    if st.button(
+        button_label,
+        key="phone_device_toggle",
+        use_container_width=True,
+    ):
+        try:
+            if is_running:
+                close_phone_device(pid=pid)
+                st.session_state["phone_device_scrcpy_pid"] = None
+                st.toast("Phone device closed", icon="✅")
+            else:
+                process = launch_phone_device()
+                st.session_state["phone_device_scrcpy_pid"] = process.pid
+                st.toast("Phone device launched", icon="✅")
+
+            st.rerun()
+
+        except PhoneDeviceError as exc:
+            st.error(str(exc))
+
 
 def build_photoshoot_meta_prompt(prompt_count, shot_ideas=None):
     shot_ideas = shot_ideas or []
@@ -400,6 +445,7 @@ def get_photoshoot_folders(photoshoot_root):
         path
         for path in root.iterdir()
         if path.is_dir()
+        and path.name.startswith("photoshoot_")
     ]
 
     return sorted(
@@ -407,6 +453,142 @@ def get_photoshoot_folders(photoshoot_root):
         key=lambda path: path.stat().st_mtime,
         reverse=True,
     )
+
+
+def render_completed_social_photoshoots(photoshoot_root):
+    photoshoot_folders = get_photoshoot_folders(
+        photoshoot_root
+    )
+
+    if not photoshoot_folders:
+        return
+
+    st.markdown("---")
+    st.subheader("Completed Social Photoshoots")
+
+    junk_dir = photoshoot_root / "_Junk_Social_Photoshoots"
+    junk_dir.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    def get_unique_folder_path(parent_dir, folder_name):
+        candidate_path = parent_dir / folder_name
+
+        if not candidate_path.exists():
+            return candidate_path
+
+        counter = 2
+
+        while True:
+            numbered_path = parent_dir / f"{folder_name}_{counter}"
+
+            if not numbered_path.exists():
+                return numbered_path
+
+            counter += 1
+
+    def move_path_to_junk(path_to_move, folder_name=None):
+        path_to_move = Path(path_to_move)
+
+        if folder_name:
+            target_parent = junk_dir / folder_name
+            target_parent.mkdir(
+                parents=True,
+                exist_ok=True,
+            )
+        else:
+            target_parent = junk_dir
+
+        if path_to_move.is_dir():
+            destination = get_unique_folder_path(
+                target_parent,
+                path_to_move.name,
+            )
+        else:
+            destination = get_unique_image_path(
+                target_parent,
+                path_to_move.name,
+            )
+
+        shutil.move(
+            str(path_to_move),
+            str(destination),
+        )
+
+        return destination
+
+    for folder_path in photoshoot_folders:
+        folder_images = get_image_files(
+            folder_path,
+            recursive=False,
+        )
+
+        if not folder_images:
+            continue
+
+        with st.expander(
+            f"{folder_path.name} - {len(folder_images)} image(s)",
+            expanded=(
+                st.session_state.get("open_social_photoshoot_session")
+                == folder_path.name
+            ),
+        ):
+            st.caption(
+                str(folder_path)
+            )
+
+            delete_folder_key = f"delete_social_photoshoot_confirm_{folder_path.name}"
+
+            st.checkbox(
+                "Confirm delete entire photoshoot",
+                key=delete_folder_key,
+            )
+
+            if st.button(
+                "Delete Entire Photoshoot",
+                key=f"delete_social_photoshoot_{folder_path.name}",
+                use_container_width=True,
+                disabled=not st.session_state.get(delete_folder_key, False),
+            ):
+                if folder_path.parent == photoshoot_root:
+                    move_path_to_junk(
+                        folder_path,
+                    )
+                    st.session_state["save_toast_message"] = (
+                        f"Moved social photoshoot {folder_path.name} to junk"
+                    )
+                    st.session_state["open_social_photoshoot_session"] = None
+                    st.rerun()
+
+            cols = st.columns(4)
+
+            for image_index, image_path in enumerate(folder_images):
+                with cols[image_index % 4]:
+                    st.image(
+                        str(image_path),
+                        use_container_width=True,
+                    )
+
+                    if st.button(
+                        "Delete Image",
+                        key=(
+                            "delete_social_photoshoot_image_"
+                            f"{folder_path.name}_{image_path.name}"
+                        ),
+                        use_container_width=True,
+                    ):
+                        move_path_to_junk(
+                            image_path,
+                            folder_name=folder_path.name,
+                        )
+                        st.session_state["open_social_photoshoot_session"] = (
+                            folder_path.name
+                        )
+                        st.session_state["save_toast_message"] = (
+                            f"Moved {image_path.name} to junk"
+                        )
+                        st.rerun()
 
 
 
@@ -420,6 +602,12 @@ if st.session_state.get("show_premium_studio", False):
     st.title("🔞 Premium Content Studio")
 else:
     st.title("☀️ Social Content Studio")
+
+if not st.session_state.get("show_premium_studio", False):
+    _, phone_col = st.columns([7, 2])
+
+    with phone_col:
+        render_phone_device_toggle()
 
 st.markdown("---")
 
@@ -461,6 +649,34 @@ if "show_premium_studio" not in st.session_state:
     st.session_state["show_premium_studio"] = False
 
 
+def reset_page_routes():
+    route_flags = [
+        "show_photoshoot_queue",
+        "show_gallery",
+        "show_staging_area",
+        "show_premium_studio",
+        "show_premium_gallery",
+        "show_premium_photoshoot_queue",
+        "show_multi_edit_studio",
+        "active_photoshoot",
+    ]
+
+    for route_flag in route_flags:
+        st.session_state[route_flag] = False
+
+    st.session_state["selected_gallery_photoshoot"] = None
+    st.session_state["edit_mode"] = None
+
+
+def go_to_page(*active_flags):
+    reset_page_routes()
+
+    for active_flag in active_flags:
+        st.session_state[active_flag] = True
+
+    st.rerun()
+
+
 # -----------------------------
 # SIDEBAR
 # -----------------------------
@@ -500,19 +716,7 @@ if st.sidebar.button(
     "🏠 Return Home",
     use_container_width=True,
 ):
-    st.session_state["show_photoshoot_queue"] = False
-    st.session_state["show_gallery"] = False
-    st.session_state["show_staging_area"] = False
-    st.session_state["show_premium_studio"] = False
-    st.session_state["show_premium_gallery"] = False
-    st.session_state["show_premium_photoshoot_queue"] = False
-    st.session_state["show_multi_edit_studio"] = False
-
-    st.session_state["selected_gallery_photoshoot"] = None
-    st.session_state["active_photoshoot"] = False
-    st.session_state["edit_mode"] = None
-
-    st.rerun()
+    go_to_page()
 
 # =====================================
 # STARTUP SESSION RESET
@@ -618,7 +822,9 @@ show_main_generator = (
 # -----------------------------
 if st.session_state.get("show_multi_edit_studio", False):
 
-    render_multi_edit_studio()
+    render_multi_edit_studio(
+        selected_output_dir=selected_output_dir,
+    )
 
 elif st.session_state.get("show_premium_studio", False):
 
@@ -644,11 +850,19 @@ elif show_main_generator:
 # -----------------------------
 # PHOTOSHOOT QUEUE DISPLAY
 # -----------------------------
-photoshoot_output_dir = Path(
-    r"D:\Ava Blackthorne\Ready\Wavespeed\Photoshoot"
+photoshoot_output_dir = get_social_photoshoot_dir(selected_output_dir)
+premium_photoshoot_output_dir = (
+    Path(selected_output_dir)
+    / "Premium"
+    / "Photoshoot"
 )
 
 photoshoot_output_dir.mkdir(
+    parents=True,
+    exist_ok=True
+)
+
+premium_photoshoot_output_dir.mkdir(
     parents=True,
     exist_ok=True
 )
@@ -664,6 +878,17 @@ photoshoot_images = sorted(
     reverse=True,
 )
 
+premium_photoshoot_images = sorted(
+    [
+        image_path
+        for image_path in premium_photoshoot_output_dir.iterdir()
+        if image_path.suffix.lower()
+        in [".png", ".jpg", ".jpeg", ".webp"]
+    ],
+    key=lambda path: path.stat().st_mtime,
+    reverse=True,
+)
+
 # ==========================
 # SIDEBAR PHOTOSHOOT SECTION
 # ==========================
@@ -672,18 +897,14 @@ st.sidebar.markdown("---")
 st.sidebar.header("Photoshoot")
 
 st.sidebar.caption(
-    f"{len(photoshoot_images)} image(s) queued"
+    f"Social: {len(photoshoot_images)} queued | Premium: {len(premium_photoshoot_images)} queued"
 )
 
 if st.sidebar.button(
     "📸 Enter Photoshoot Queue",
     use_container_width=True
 ):
-    st.session_state["show_photoshoot_queue"] = True
-    st.session_state["show_gallery"] = False
-    st.session_state["selected_gallery_photoshoot"] = None
-    st.session_state["active_photoshoot"] = False
-    st.rerun()
+    go_to_page("show_photoshoot_queue")
 
 st.sidebar.markdown("---")
 st.sidebar.header("Gallery")
@@ -692,13 +913,21 @@ if st.sidebar.button(
     "🖼 Browse Gallery",
     use_container_width=True,
 ):
-    st.session_state["show_gallery"] = True
-    st.session_state["show_photoshoot_queue"] = False
-    st.session_state["active_photoshoot"] = False
-    st.session_state["selected_gallery_photoshoot"] = None
-    st.rerun()
+    go_to_page("show_gallery")
 
 render_staging_sidebar_button()
+
+st.sidebar.markdown("---")
+
+st.sidebar.subheader(
+    "Edit Studio"
+)
+
+if st.sidebar.button(
+    "✏️ Open Edit Studio",
+    use_container_width=True,
+):
+    go_to_page("show_multi_edit_studio")
 
 st.sidebar.markdown("---")
 
@@ -710,12 +939,7 @@ if st.sidebar.button(
     "Enter Premium Studio",
     use_container_width=True,
 ):
-    st.session_state["show_premium_studio"] = True
-    st.session_state["show_photoshoot_queue"] = False
-    st.session_state["show_gallery"] = False
-    st.session_state["show_staging_area"] = False
-    st.session_state["active_photoshoot"] = False
-    st.rerun()
+    go_to_page("show_premium_studio")
 
 # ==========================
 # MAIN PAGE GALLERY VIEW
@@ -911,6 +1135,7 @@ if st.session_state.get(
                         posted_socials_dir = (
                             review_image_path.parent.parent
                             / "Posted-Socials"
+                            / "Posted_X"
                         )
 
                         posted_socials_dir.mkdir(
@@ -932,7 +1157,7 @@ if st.session_state.get(
 
                         st.session_state[
                             "save_toast_message"
-                        ] = "🚀 Published to X and moved to Posted-Socials"
+                        ] = "🚀 Published to X and moved to Posted_X"
 
                         st.session_state[
                             "publish_review_image"
@@ -1015,6 +1240,21 @@ if (
             st.session_state["show_photoshoot_queue"] = False
             st.rerun()
 
+    if "photoshoot_queue_mode" not in st.session_state:
+        st.session_state["photoshoot_queue_mode"] = "Social"
+
+    queue_mode = st.radio(
+        "Photoshoot Queue Type",
+        ["Social", "Premium"],
+        horizontal=True,
+        key="photoshoot_queue_mode",
+        label_visibility="collapsed",
+    )
+
+    if queue_mode == "Premium":
+        render_premium_photoshoot_queue(selected_output_dir)
+        st.stop()
+
     st.markdown("### ➕ Add Image To Photoshoot Queue")
 
     uploaded_photoshoot = st.file_uploader(
@@ -1053,6 +1293,9 @@ if (
     if not photoshoot_images:
 
         st.warning("No images currently in Photoshoot Queue.")
+        render_completed_social_photoshoots(
+            photoshoot_output_dir
+        )
 
     else:
 
@@ -1279,6 +1522,10 @@ if (
 
                     st.rerun()
 
+        render_completed_social_photoshoots(
+            photoshoot_output_dir
+        )
+
 
 # ==========================
 # ACTIVE PHOTOSHOOT
@@ -1392,9 +1639,7 @@ if (
 
             else:
 
-                photoshoot_root_dir = Path(
-                    r"D:\Ava Blackthorne\Ready\Wavespeed\Photoshoot"
-                )
+                photoshoot_root_dir = photoshoot_output_dir
 
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
@@ -1438,3 +1683,4 @@ if (
                 st.session_state["approved_photoshoot_results"] = []
 
                 st.rerun()
+

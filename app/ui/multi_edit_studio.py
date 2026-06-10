@@ -6,6 +6,12 @@ import requests
 from datetime import datetime
 
 import streamlit as st
+from dotenv import load_dotenv
+
+from app.config.content_paths import (
+    get_premium_gallery_dir,
+    get_social_gallery_dir,
+)
 
 from main import (
     upload_to_imgbb,
@@ -21,14 +27,6 @@ from app.ui.image_file_utils import (
 )
 
 
-wavespeed_key = os.getenv(
-    "WAVESPEED_API_KEY"
-)
-
-imgbb_key = os.getenv(
-    "IMGBB_API_KEY"
-)
-
 NANO_BANANA_PRO_EDIT_URL = (
     "https://api.wavespeed.ai/api/v3/google/nano-banana-pro/edit"
 )
@@ -40,6 +38,15 @@ NANO_BANANA_PRO_EDIT_MULTI_URL = (
 WAN_27_IMAGE_EDIT_PRO_URL = (
     "https://api.wavespeed.ai/api/v3/alibaba/wan-2.7/image-edit-pro"
 )
+
+
+def get_edit_api_keys():
+    load_dotenv()
+
+    return {
+        "wavespeed_key": os.getenv("WAVESPEED_API_KEY"),
+        "imgbb_key": os.getenv("IMGBB_API_KEY"),
+    }
 
 
 def download_result_image(
@@ -61,6 +68,34 @@ def clear_edit_state():
     st.session_state["multi_edit_result_url"] = None
     st.session_state["multi_edit_result_model"] = None
     st.session_state["multi_edit_result_prompt"] = None
+    st.session_state["multi_edit_result_saved_path"] = None
+
+
+def save_edit_result_to_edited_folder(
+    result_url,
+    source_path,
+):
+    gallery_root = source_path.parent.parent
+    edited_dir = gallery_root / "Edited"
+
+    edited_dir.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    edited_path = get_unique_image_path(
+        edited_dir,
+        f"edited_{timestamp}.png",
+    )
+
+    download_result_image(
+        result_url,
+        edited_path,
+    )
+
+    return str(edited_path)
 
 
 def render_result_actions(
@@ -81,6 +116,13 @@ def render_result_actions(
         st.caption(
             f"Generated with {st.session_state.get('multi_edit_result_model', 'selected model')}"
         )
+
+        saved_path = st.session_state.get("multi_edit_result_saved_path")
+
+        if saved_path:
+            st.success(
+                "Saved"
+            )
 
         action_col1, action_col2, action_col3, action_col4 = st.columns(4)
 
@@ -265,8 +307,6 @@ def restore_original_to_gallery(source_path):
 
 
 def render_edit_landing(source_path):
-    st.markdown("### 🎨 Choose Edit Type")
-
     preview_col, action_col = st.columns([4, 8], gap="large")
 
     with preview_col:
@@ -353,6 +393,152 @@ def render_edit_landing(source_path):
                 st.rerun()
 
 
+def save_uploaded_edit_source(
+    uploaded_file,
+    selected_output_dir,
+    destination_label,
+    edit_mode=None,
+):
+    if destination_label == "Premium Gallery":
+        gallery_root = get_premium_gallery_dir(selected_output_dir)
+        origin = "premium"
+    else:
+        gallery_root = get_social_gallery_dir(selected_output_dir)
+        origin = "social"
+
+    sent_to_edit_dir = gallery_root / "Sent-to-Edit"
+
+    sent_to_edit_dir.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    file_suffix = Path(uploaded_file.name).suffix or ".png"
+
+    uploaded_source_path = get_unique_image_path(
+        sent_to_edit_dir,
+        f"uploaded_edit_source_{timestamp}{file_suffix}",
+    )
+
+    with open(uploaded_source_path, "wb") as file:
+        file.write(uploaded_file.getbuffer())
+
+    st.session_state["multi_edit_source_image"] = str(uploaded_source_path)
+    st.session_state["multi_edit_origin"] = origin
+    st.session_state["edit_mode"] = edit_mode
+    clear_edit_state()
+
+
+def render_global_edit_upload(selected_output_dir):
+    preview_col, action_col = st.columns([4, 8], gap="large")
+
+    with preview_col:
+        st.markdown("#### Source Image")
+
+        uploaded_file = st.file_uploader(
+            "Drag and drop an image to edit",
+            type=["png", "jpg", "jpeg", "webp"],
+            accept_multiple_files=False,
+        )
+
+        if uploaded_file is not None:
+            st.image(
+                uploaded_file,
+                use_container_width=True,
+            )
+        else:
+            st.info("Upload a source image to unlock Single Edit and Multi Edit.")
+
+        destination_label = st.radio(
+            "Save uploaded source to",
+            [
+                "Premium Gallery",
+                "Social Gallery",
+            ],
+            index=0,
+        )
+
+    with action_col:
+        st.markdown("#### What do you want to do?")
+
+        single_card, multi_card = st.columns(2, gap="large")
+
+        with single_card:
+            st.markdown(
+                """
+                <div style="
+                    border: 1px solid #ddd;
+                    border-radius: 14px;
+                    padding: 22px;
+                    min-height: 210px;
+                    background: #ffffff;
+                ">
+                    <h3 style="margin-top: 0;">✏️ Single Edit</h3>
+                    <p style="color: #666; font-size: 14px;">
+                        Use text instructions only.
+                    </p>
+                    <p style="color: #888; font-size: 13px;">
+                        Best for changing color, fixing small details, adjusting clothing,
+                        or making simple edits to the same image.
+                    </p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+            if st.button(
+                "Open Single Edit",
+                key="open_single_edit_from_global_upload",
+                use_container_width=True,
+                disabled=uploaded_file is None,
+            ):
+                save_uploaded_edit_source(
+                    uploaded_file=uploaded_file,
+                    selected_output_dir=selected_output_dir,
+                    destination_label=destination_label,
+                    edit_mode="single",
+                )
+                st.rerun()
+
+        with multi_card:
+            st.markdown(
+                """
+                <div style="
+                    border: 1px solid #ddd;
+                    border-radius: 14px;
+                    padding: 22px;
+                    min-height: 210px;
+                    background: #ffffff;
+                ">
+                    <h3 style="margin-top: 0;">🎨 Multi Edit</h3>
+                    <p style="color: #666; font-size: 14px;">
+                        Use a second reference image.
+                    </p>
+                    <p style="color: #888; font-size: 13px;">
+                        Best for swapping clothing, adding a purse, using a product,
+                        matching a lingerie set, or adding a prop.
+                    </p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+            if st.button(
+                "Open Multi Edit",
+                key="open_multi_edit_from_global_upload",
+                use_container_width=True,
+                disabled=uploaded_file is None,
+            ):
+                save_uploaded_edit_source(
+                    uploaded_file=uploaded_file,
+                    selected_output_dir=selected_output_dir,
+                    destination_label=destination_label,
+                    edit_mode="multi",
+                )
+                st.rerun()
+
+
 def render_single_edit(
     source_path,
 ):
@@ -395,6 +581,9 @@ def render_single_edit(
         )
 
     if generate_clicked:
+        api_keys = get_edit_api_keys()
+        wavespeed_key = api_keys["wavespeed_key"]
+        imgbb_key = api_keys["imgbb_key"]
 
         if not wavespeed_key:
             st.error("Missing WAVESPEED_API_KEY in .env")
@@ -444,6 +633,12 @@ def render_single_edit(
         st.session_state["multi_edit_result_url"] = output_url
         st.session_state["multi_edit_result_model"] = selected_model
         st.session_state["multi_edit_result_prompt"] = final_prompt
+        st.session_state["multi_edit_result_saved_path"] = (
+            save_edit_result_to_edited_folder(
+                output_url,
+                source_path,
+            )
+        )
 
         st.rerun()
 
@@ -510,6 +705,9 @@ def render_multi_reference_edit(
     )
 
     if generate_clicked:
+        api_keys = get_edit_api_keys()
+        wavespeed_key = api_keys["wavespeed_key"]
+        imgbb_key = api_keys["imgbb_key"]
 
         if not wavespeed_key:
             st.error("Missing WAVESPEED_API_KEY in .env")
@@ -575,11 +773,17 @@ def render_multi_reference_edit(
         st.session_state["multi_edit_result_url"] = output_url
         st.session_state["multi_edit_result_model"] = selected_model
         st.session_state["multi_edit_result_prompt"] = final_prompt
+        st.session_state["multi_edit_result_saved_path"] = (
+            save_edit_result_to_edited_folder(
+                output_url,
+                source_path,
+            )
+        )
 
         st.rerun()
 
 
-def render_multi_edit_studio():
+def render_multi_edit_studio(selected_output_dir=None):
     st.subheader("🎨 Edit Studio")
 
     source_image = st.session_state.get(
@@ -587,7 +791,13 @@ def render_multi_edit_studio():
     )
 
     if not source_image:
-        st.warning("No source image selected yet.")
+        if selected_output_dir is None:
+            st.warning("No source image selected yet.")
+            return
+
+        render_global_edit_upload(
+            selected_output_dir=selected_output_dir,
+        )
         return
 
     source_path = Path(source_image)

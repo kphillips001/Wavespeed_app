@@ -70,21 +70,49 @@ def render_premium_prompt_expander():
     if not st.session_state["premium_prompts"]:
         return
 
-    with st.expander("View Generated Premium Prompts", expanded=False):
+    prompt_mode = st.session_state.get(
+        "premium_prompt_mode",
+        "premium",
+    )
+
+    prompt_label = (
+        "Explicit Prompt"
+        if prompt_mode == "explicit"
+        else "Premium Prompt"
+    )
+
+    expander_label = (
+        "View Generated Explicit Prompts"
+        if prompt_mode == "explicit"
+        else "View Generated Premium Prompts"
+    )
+
+    def get_prompt_text_area_height(prompt_text):
+        if not prompt_text:
+            return 110
+
+        wrapped_lines = 0
+
+        for line in str(prompt_text).splitlines() or [""]:
+            wrapped_lines += max(1, (len(line) // 165) + 1)
+
+        return max(110, wrapped_lines * 22 + 44)
+
+    with st.expander(expander_label, expanded=False):
         prompts_to_delete = []
 
         for index, prompt_data in enumerate(
             st.session_state["premium_prompts"],
             start=1,
-        ):
+            ):
             prompt_id = prompt_data["id"]
 
-            st.markdown(f"### Premium Prompt {index}")
+            st.markdown(f"### {prompt_label} {index}")
 
             updated_prompt_text = st.text_area(
-                label=f"Premium Prompt {index}",
+                label=f"{prompt_label} {index}",
                 value=prompt_data["text"],
-                height=140,
+                height=get_prompt_text_area_height(prompt_data["text"]),
                 label_visibility="collapsed",
                 key=f"premium_prompt_edit_{prompt_id}",
             )
@@ -110,17 +138,21 @@ def render_premium_prompt_expander():
             st.rerun()
 
 
-def render_premium_generated_image_gallery(selected_output_dir):
-    generated_images = st.session_state.get(
-        "premium_generated_images",
-        [],
-    )
+def render_premium_generated_image_gallery(
+    generated_images=None,
+    title="Completed Generated Images",
+):
+    if generated_images is None:
+        generated_images = st.session_state.get(
+            "premium_generated_images",
+            [],
+        )
 
     if not generated_images:
         return
 
     st.markdown("---")
-    st.subheader("Generated Images")
+    st.subheader(title)
 
     cols = st.columns(3)
 
@@ -420,11 +452,11 @@ def render_premium_content_studio_legacy(selected_output_dir):
         )
 
         premium_explicit_optional_setting = st.text_input(
-            label="Optional Setting",
+            label="Optional Setting / Direction",
             key="premium_explicit_optional_setting",
             placeholder=(
-                "Optional: rooftop, club bathroom, hotel suite, dark alley. "
-                "Leave blank for varied settings."
+                "Optional: rooftop, hotel suite, full-body framing, "
+                "waist-up close-up. Leave blank for random settings."
             ),
         )
 
@@ -700,6 +732,7 @@ def render_premium_content_studio_legacy(selected_output_dir):
                 premium_prompts = generate_premium_prompts(
                     creative_tags=tags_for_prompt_generation,
                     prompt_count=premium_prompt_count,
+                    optional_direction=premium_explicit_optional_setting,
                 )
 
             st.session_state["premium_reference_image"] = active_premium_reference_image
@@ -862,7 +895,7 @@ def render_premium_content_studio_legacy(selected_output_dir):
             )
 
     render_premium_generated_image_gallery(
-        selected_output_dir=selected_output_dir,
+        title="Completed Generated Images",
     )
 
     if (
@@ -1096,11 +1129,11 @@ def render_premium_creative_director(
             )
 
             premium_explicit_optional_setting = st.text_input(
-                label="Optional Setting",
+                label="Optional Setting / Direction",
                 key="premium_explicit_optional_setting",
                 placeholder=(
-                    "Optional: rooftop, club bathroom, hotel suite, dark alley. "
-                    "Leave blank for varied settings."
+                    "Optional: rooftop, hotel suite, full-body framing, "
+                    "waist-up close-up. Leave blank for random settings."
                 ),
             )
 
@@ -1280,6 +1313,7 @@ def render_premium_creative_director(
                         premium_prompts = generate_premium_prompts(
                             creative_tags=tags_for_prompt_generation,
                             prompt_count=premium_prompt_count,
+                            optional_direction=premium_explicit_optional_setting,
                         )
 
                     set_premium_prompt_batch(
@@ -1397,17 +1431,16 @@ def render_premium_content_studio(selected_output_dir):
 
             if generated_images:
                 with live_gallery.container():
-                    st.markdown("---")
-                    st.subheader("Live Generated Images")
+                    gallery_title = (
+                        "Completed Generated Images"
+                        if total > 0 and remaining_count <= 0
+                        else "Live Generated Images"
+                    )
 
-                    cols = st.columns(3)
-
-                    for image_index, image_item in enumerate(generated_images):
-                        with cols[image_index % 3]:
-                            st.image(
-                                image_item["url"],
-                                use_container_width=True,
-                            )
+                    render_premium_generated_image_gallery(
+                        generated_images=generated_images,
+                        title=gallery_title,
+                    )
 
         with st.spinner(f"Generating premium images with {premium_renderer}..."):
             if manual_prompt.strip():
@@ -1464,9 +1497,16 @@ def render_premium_content_studio(selected_output_dir):
                 f"Generation complete. {completed_count} completed, {failed_count} failed"
             )
 
-    render_premium_generated_image_gallery(
-        selected_output_dir=selected_output_dir,
-    )
+        if st.session_state.get("premium_generated_images"):
+            with live_gallery.container():
+                render_premium_generated_image_gallery(
+                    title="Completed Generated Images",
+                )
+
+    elif st.session_state.get("premium_generated_images"):
+        render_premium_generated_image_gallery(
+            title="Completed Generated Images",
+        )
 
     if (
         st.session_state.get("premium_last_manual_prompt_base")

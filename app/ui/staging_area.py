@@ -72,10 +72,23 @@ def render_staging_sidebar_button():
         f"📦 Enter Staging Area",
         use_container_width=True,
     ):
+        route_flags = [
+            "show_photoshoot_queue",
+            "show_gallery",
+            "show_staging_area",
+            "show_premium_studio",
+            "show_premium_gallery",
+            "show_premium_photoshoot_queue",
+            "show_multi_edit_studio",
+            "active_photoshoot",
+        ]
+
+        for route_flag in route_flags:
+            st.session_state[route_flag] = False
+
         st.session_state["show_staging_area"] = True
-        st.session_state["show_gallery"] = False
-        st.session_state["show_photoshoot_queue"] = False
-        st.session_state["active_photoshoot"] = False
+        st.session_state["selected_gallery_photoshoot"] = None
+        st.session_state["edit_mode"] = None
         st.rerun()
 
 

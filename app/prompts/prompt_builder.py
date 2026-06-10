@@ -6,6 +6,10 @@ SOCIAL_BODY_CONTINUITY_PHRASE = (
     "same waist-to-hip proportions, close creator-style framing with her body large in frame"
 )
 
+SOCIAL_EXPRESSION_FALLBACK_PHRASE = (
+    "natural warm engaged facial expression with a subtle genuine smile that reaches her eyes"
+)
+
 
 def normalize_social_prompt_continuity(prompt):
     cleaned_prompt = (prompt or "").strip()
@@ -22,10 +26,29 @@ def normalize_social_prompt_continuity(prompt):
     ]
 
     if all(term in prompt_lower for term in required_terms):
-        return cleaned_prompt
+        continuity_prompt = cleaned_prompt
+    else:
+        cleaned_prompt = cleaned_prompt.rstrip(" ,.")
+        continuity_prompt = f"{cleaned_prompt}, {SOCIAL_BODY_CONTINUITY_PHRASE}"
 
-    cleaned_prompt = cleaned_prompt.rstrip(" ,.")
-    return f"{cleaned_prompt}, {SOCIAL_BODY_CONTINUITY_PHRASE}"
+    expression_terms = [
+        "smile",
+        "laugh",
+        "grin",
+        "playful",
+        "happy",
+        "excited",
+        "warm expression",
+        "flirty",
+        "mischievous",
+        "confident gaze",
+        "engaged",
+    ]
+
+    if any(term in continuity_prompt.lower() for term in expression_terms):
+        return continuity_prompt
+
+    return f"{continuity_prompt.rstrip(' ,.')}, {SOCIAL_EXPRESSION_FALLBACK_PHRASE}"
 
 
 def build_shot_type_context():
@@ -1011,6 +1034,44 @@ Do NOT repeat:
 - same body orientation
 - same micro-behavior
 
+FACIAL EXPRESSION AND PERSONALITY RULES:
+
+Every prompt must give her a visible, emotionally alive facial expression.
+Do not default to blank, neutral, bored, monotone, mannequin-like, or emotionless expressions.
+
+Most Social Content Studio prompts should make her feel warm, quietly happy,
+playful, confident, approachable, flirty, or genuinely engaged.
+Expressions must look candid and believable, not forced, fake, exaggerated,
+plastic, or overacted.
+Favor subtle eye warmth, relaxed cheeks, small asymmetry, natural mouth shape,
+and in-the-moment micro-expressions over big posed smiles.
+
+Use a varied expression palette such as:
+- soft genuine smile that reaches her eyes
+- subtle playful smile
+- candid amused half-smile
+- warm relaxed expression
+- coy smile
+- relaxed mischievous smirk
+- candid laugh caught mid-moment
+- confident friendly gaze
+- playful raised eyebrow
+- relaxed happy glow
+- soft flirty smile
+
+Avoid:
+- forced smile
+- fake grin
+- overly toothy smile
+- frozen pageant smile
+- uncanny perfect smile
+- exaggerated open-mouth acting
+- dead eyes with a pasted-on smile
+
+Vary the expression in every prompt.
+Do not repeat the same facial gesture across the batch.
+The goal is a creator with personality and life, not a beautiful but monotone subject.
+
 The batch should feel like:
 10 different male-attention optimized creator posts from the same creator brand.
 
@@ -1161,6 +1222,7 @@ Every final prompt must include:
 - same waist-to-hip proportions
 - rich dark tan skin
 - social-safe fitted styling or framing that preserves her exact body shape
+- a clearly described facial expression with happy, playful, excited, warm, confident, flirty, or genuinely engaged energy
 
 Avoid reusing the same action, pose, or body orientation from previous generations.
 
