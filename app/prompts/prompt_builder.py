@@ -313,6 +313,34 @@ Example:
 For a beach image, create a progression such as arriving, walking toward water, standing at shoreline, sitting on towel, entering water, candid close-up, sunset ending.
 """
 
+    elif generation_mode["key"] == "nsfw_evolution":
+
+        mode_rules = """
+CREATIVE FLOW:
+NSFW EVOLUTION MODE
+
+PURPOSE:
+Automatic strong NSFW progression from the reference image / starting state.
+Optimized for adult content with natural erotic escalation.
+
+RULES:
+- Start very close to the reference pose, clothing state, and setting.
+- Progress sensuality and explicitness gradually across the full batch.
+- Natural clothing removal progression (partial → topless → sliding panties down → full nude).
+- Move into intimate self-touch: hands on breasts, squeezing, rubbing over clothing, fingers on clit, fingering, masturbation poses.
+- Stay in the EXACT same environment, lighting, floor/walls/background/furniture throughout. Do NOT change the location.
+- Never revert to more clothing than previous steps.
+- Maintain perfect continuity of face, hair, body, rich dark tan, and D-cup bust in every prompt.
+- Use natural, sensual, private-creator-moment language.
+- Vary angles, pleasure expressions (eyes closed in ecstasy, biting lip, moaning face, arching back, etc.).
+- Favor close, intimate framing that emphasizes body and action.
+- Increase explicitness step by step across the sequence.
+
+MANDATORY:
+- The batch should feel like one continuous private NSFW moment evolving in real time.
+- Explicit intimate acts are expected and should be described directly when the progression reaches that stage.
+"""
+
     else:
 
         mode_rules = """

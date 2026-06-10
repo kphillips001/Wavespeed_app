@@ -1,6 +1,30 @@
 from app.prompts.shot_types import SHOT_TYPES
 
 
+def build_nsfw_progression_instruction(prompt_count: int = 10) -> str:
+    return f"""
+AUTOMATIC FULL NSFW PROGRESSION MODE (HIGH PRIORITY):
+
+When the reference image shows partial nudity (topless, lingerie, bra/panties, sheer clothing, etc.) or the creative tags suggest NSFW/premium adult content, automatically create a strong, natural erotic evolution story across the entire batch.
+
+Progression flow (spread naturally across the {prompt_count} prompts):
+1. Start very close to the reference pose/setting
+2. Increase sensuality: hands on breasts, squeezing, playing with nipples
+3. Touching lower body over clothing (rubbing panties, hand between legs)
+4. Progressive clothing removal (sliding panties down, fully removing them)
+5. Full nude with legs opening/spreading
+6. Explicit intimate self-touch: fingers rubbing clit, fingering, masturbation poses
+7. Various angles, pleasure expressions (eyes closed in ecstasy, biting lip, moaning face, etc.)
+
+MANDATORY RULES:
+- Stay in the EXACT same environment, lighting, floor/walls/background/furniture as the reference image. Do NOT change the location.
+- Never revert to more clothing than the reference.
+- Keep perfect face, hair, body, tan, and D-cup bust continuity in EVERY prompt.
+- Increase explicitness gradually across the batch.
+- Use natural, sensual, private-creator-moment language.
+"""
+
+
 def build_premium_shot_type_context():
     formatted_shot_types = "\n".join(
         f"- {shot_type}"
@@ -42,7 +66,9 @@ def build_premium_grok_prompt(
 ) -> str:
 
     shot_type_context = build_premium_shot_type_context()
+    nsfw_progression = build_nsfw_progression_instruction(prompt_count)
     direction_text = (optional_direction or "").strip()
+
     direction_instruction = (
         f"""
 OPTIONAL SETTING / DIRECTION:
@@ -59,13 +85,7 @@ waist-to-hip proportions, rich dark tan skin, and recognizable body structure.
         if direction_text
         else """
 OPTIONAL SETTING / DIRECTION:
-No setting or framing direction was supplied.
-Treat this as a random mixed batch, not one continuous photoshoot.
-Each prompt should use a distinct standalone setting, lighting setup, and scene concept.
-Default to close creator-style framing, but vary the exact crop naturally across
-close-up, close-medium, waist-up, upper-thigh, and head-to-thigh compositions.
-Do not repeat the same room, bed, bathroom, pool, lighting setup, or visual theme
-across the whole batch unless the user tags specifically require it.
+No additional direction supplied. Rely on automatic NSFW progression.
 """
     )
 
@@ -73,6 +93,8 @@ across the whole batch unless the user tags specifically require it.
 I need a list of {prompt_count} high-quality WAN 2.7 image-edit prompts.
 
 These prompts always use the SAME reference image.
+
+{nsfw_progression}
 
 Every prompt MUST preserve:
 - same woman

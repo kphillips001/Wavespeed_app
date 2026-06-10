@@ -92,11 +92,14 @@ def select_generation_mode():
     print("   - Same outfit and same setting, different poses and camera angles")
     print()
 
-    print("3. Story Sequence Mode")
-    print("   - Connected images that feel like a mini visual story")
+    print("3. Story Sequence Mode (Recommended for NSFW)")
+    print("   - A connected sequence that feels like a mini visual story with natural progression.")
+    print()
+    print("4. NSFW Evolution Mode")
+    print("   - Automatic strong NSFW progression from reference (clothing removal + intimate acts).")
 
     while True:
-        choice = input("\nEnter number (1-3): ").strip()
+        choice = input("\nEnter number (1-4): ").strip()
 
         if choice in GENERATION_MODES:
             selected = GENERATION_MODES[choice]
@@ -106,7 +109,7 @@ def select_generation_mode():
 
             return selected
 
-        print("❌ Invalid selection. Please enter 1-3.")
+        print("❌ Invalid selection. Please enter 1-4.")
 
 
 # -----------------------------

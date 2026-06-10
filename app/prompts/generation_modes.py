@@ -11,7 +11,12 @@ GENERATION_MODES = {
     },
     "3": {
         "key": "story_sequence",
-        "name": "Story Sequence Mode",
-        "description": "A connected sequence that feels like a mini visual story.",
+        "name": "Story Sequence Mode (Recommended for NSFW)",
+        "description": "A connected sequence that feels like a mini visual story with natural progression.",
+    },
+    "4": {
+        "key": "nsfw_evolution",
+        "name": "NSFW Evolution Mode",
+        "description": "Automatic strong NSFW progression from reference (clothing removal + intimate acts).",
     },
 }
